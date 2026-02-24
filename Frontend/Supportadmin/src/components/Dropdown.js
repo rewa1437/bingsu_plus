@@ -1,21 +1,46 @@
-import { useState, useRef, useEffect } from 'react';
-import { HiChevronDown } from 'react-icons/hi';
-
 function Dropdown({ options = [], selectedValue, onSelect, placeholder = "Select..." }) {
-import { HiBell } from 'react-icons/hi';
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
-function NotificationBell({ onClick }) {
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
-    <button
-      className="relative bg-white hover:bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-full p-2 shadow-lg transition-all duration-300 ease-in-out flex items-center justify-center"
-      title="Notifications"
-      onClick={onClick}
-    >
-      <HiBell className="text-gray-700 text-xl" />
-      {/* Optionally add badge */}
-      {/* <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1">3</span> */}
-    </button>
+    <div className="relative" ref={dropdownRef}>
+      <button
+        className="flex items-center justify-between w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-700 focus:outline-none"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>{selectedValue ? selectedValue : placeholder}</span>
+        <HiChevronDown className="ml-2 text-gray-500" />
+      </button>
+      {isOpen && (
+        <ul className="absolute left-0 mt-2 w-full bg-white border border-gray-300 rounded shadow-lg z-10">
+          {options.map((option, idx) => (
+            <li
+              key={option}
+              className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+              onClick={() => {
+                onSelect(option);
+                setIsOpen(false);
+              }}
+            >
+              {option}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
-export default NotificationBell;
+export default Dropdown;
