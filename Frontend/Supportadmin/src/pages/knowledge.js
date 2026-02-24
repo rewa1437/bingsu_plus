@@ -1,15 +1,23 @@
 import { useNavigate } from 'react-router-dom';
-import { HiPlus, HiSearch, HiDotsHorizontal } from 'react-icons/hi';
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { HiSearch } from 'react-icons/hi';
+import { useState, useMemo, useEffect } from 'react';
+import { knowledgeListRaw, KNOWLEDGE_LIMIT_PER_USER } from '../data/knowledgeData';
 
 function Knowledge() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [knowledgeList, setKnowledgeList] = useState([]);
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [knowledgeToDelete, setKnowledgeToDelete] = useState(null);
-  const menuRefs = useRef({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
+  const getCappedKnowledgeList = (rawList) => {
+    const userKnowledgeCount = {};
+    return rawList.filter((knowledge) => {
+      const nextCount = (userKnowledgeCount[knowledge.username] || 0) + 1;
+      userKnowledgeCount[knowledge.username] = nextCount;
+      return nextCount <= KNOWLEDGE_LIMIT_PER_USER;
+    });
+  };
+
+  const [knowledgeList] = useState(() => getCappedKnowledgeList(knowledgeListRaw));
 
   // Filter knowledge based on search query
   const filteredKnowledgeList = useMemo(() => {
@@ -19,204 +27,143 @@ function Knowledge() {
     const query = searchQuery.toLowerCase();
     return knowledgeList.filter(k => 
       k.name.toLowerCase().includes(query) ||
-      (k.description && k.description.toLowerCase().includes(query))
+      (k.description && k.description.toLowerCase().includes(query)) ||
+      (k.username && k.username.toLowerCase().includes(query))
     );
   }, [knowledgeList, searchQuery]);
 
-  const handleMenuToggle = (e, knowledgeId) => {
-    e.stopPropagation();
-    setOpenMenuId(openMenuId === knowledgeId ? null : knowledgeId);
-  };
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredKnowledgeList.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedKnowledgeList = filteredKnowledgeList.slice(startIndex, endIndex);
 
-  const handleDeleteClick = (e, knowledgeId) => {
-    e.stopPropagation();
-    setKnowledgeToDelete(knowledgeId);
-    setIsDeleteConfirmOpen(true);
-    setOpenMenuId(null);
-  };
-
-  const handleConfirmDelete = () => {
-    if (knowledgeToDelete) {
-      // Frontend only - just update local state
-      setKnowledgeList(knowledgeList.filter(k => k.id !== knowledgeToDelete));
-    }
-    setIsDeleteConfirmOpen(false);
-    setKnowledgeToDelete(null);
-  };
-
-  const handleCancelDelete = () => {
-    setIsDeleteConfirmOpen(false);
-    setKnowledgeToDelete(null);
-  };
-
-  // Close menu when clicking outside
+  // Reset to page 1 when search query changes
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      let isClickedInside = false;
-      
-      Object.values(menuRefs.current).forEach(ref => {
-        if (ref && ref.contains(event.target)) {
-          isClickedInside = true;
-        }
-      });
-
-      if (!isClickedInside) {
-        setOpenMenuId(null);
-      }
-    };
-
-    if (openMenuId) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openMenuId]);
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   return (
     <>
-      {/* Create Button - Top Right */}
-      <button
-        onClick={() => navigate('/create-knowledge')}
-        className='absolute top-6 right-6 flex items-center gap-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 z-10'
-      >
-        <span>Create Knowledge</span>
-        <HiPlus className='text-lg' />
-      </button>
-
       {/* Header */}
       <div className='mb-6'>
-        <h1 className='text-3xl font-bold text-gray-800 mb-4'>Knowledge</h1>
+        <h1 className='text-2xl font-semibold text-gray-800 mb-4'>
+          Knowledge <span className='text-gray-600 font-normal'>{filteredKnowledgeList.length}</span>
+        </h1>
         
         {/* Search Input */}
         <div className='relative max-w-md'>
-          <HiSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg' />
+          <HiSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl' />
           <input
             type='text'
             placeholder='Search Knowledge'
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className='w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-gray-700 placeholder-gray-400'
+            className='w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-gray-700 placeholder-gray-400'
           />
         </div>
       </div>
 
       {/* Knowledge List */}
-      <div className='flex-1'>
+      <div className='flex-1 flex flex-col'>
         {filteredKnowledgeList.length > 0 ? (
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-            {filteredKnowledgeList.map((knowledge) => (
+          <>
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3'>
+              {paginatedKnowledgeList.map((knowledge) => (
               <div
                 key={knowledge.id}
-                onClick={() => navigate(`/knowledge/${knowledge.id}/add-data`)}
-                className='bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:border-yellow-400 relative'
+                className='bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col'
               >
-                {/* Menu Button */}
-                <div 
-                  className='absolute top-4 right-4'
-                  ref={(el) => menuRefs.current[knowledge.id] = el}
-                >
-                  <button
-                    type='button'
-                    onClick={(e) => handleMenuToggle(e, knowledge.id)}
-                    className='p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors'
-                  >
-                    <HiDotsHorizontal className='text-xl' />
-                  </button>
-
-                  {/* Dropdown Menu */}
-                  {openMenuId === knowledge.id && (
-                    <div className='absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48'>
-                      {/* Edit Option */}
-                      <button
-                        type='button'
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenMenuId(null);
-                          navigate('/create-knowledge', { state: { knowledge } });
-                        }}
-                        className='w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-200 first:rounded-t-lg text-gray-700'
-                      >
-                        แก้ไข
-                      </button>
-
-                      {/* Delete Option */}
-                      <button
-                        type='button'
-                        onClick={(e) => handleDeleteClick(e, knowledge.id)}
-                        className='w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 transition-colors last:rounded-b-lg'
-                      >
-                        ลบ Knowledge
-                      </button>
-                    </div>
-                  )}
+                <div className='flex-1'>
+                  <h3 className='text-base font-semibold text-gray-800 mb-1'>{knowledge.name}</h3>
+                  <p className='text-sm text-gray-600'>{knowledge.description || 'No description'}</p>
                 </div>
-
-                <h3 className='text-lg font-semibold text-gray-800 mb-2 pr-8'>{knowledge.name}</h3>
-                <p className='text-sm text-gray-600 mb-4'>{knowledge.description || 'No description'}</p>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/knowledge/${knowledge.id}/add-data`);
-                  }}
-                  className='inline-flex items-center gap-2 px-2 py-1 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-md shadow hover:shadow-md transition-all duration-200 hover:scale-105 active:scale-95 text-sm'
-                >
-                  <span>Add Data</span>
-                  <span>→</span>
-                </button>
+                <div className='flex justify-between items-center mt-4'>
+                  <p className='text-xs text-gray-500'>By {knowledge.username}</p>
+                  <button
+                    onClick={() =>
+                      navigate(`/knowledge/${knowledge.id}/add-data`, {
+                        state: { knowledgeName: knowledge.name },
+                      })
+                    }
+                    className='px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-sm'
+                  >
+                    รายละเอียด
+                  </button>
+                </div>
               </div>
             ))}
-          </div>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className='flex justify-center items-center gap-2 mt-auto pt-3'>
+                {/* Previous Button */}
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-2 rounded-lg font-medium transition-colors ${
+                    currentPage === 1
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  ←
+                </button>
+
+                {/* Page Numbers */}
+                {[...Array(totalPages)].map((_, index) => {
+                  const pageNum = index + 1;
+                  // Show first page, last page, current page, and pages around current
+                  if (
+                    pageNum === 1 ||
+                    pageNum === totalPages ||
+                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-yellow-400 text-gray-800'
+                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  } else if (
+                    pageNum === currentPage - 2 ||
+                    pageNum === currentPage + 2
+                  ) {
+                    return <span key={pageNum} className='px-2 text-gray-400'>...</span>;
+                  }
+                  return null;
+                })}
+
+                {/* Next Button */}
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className={`px-3 py-2 rounded-lg font-medium transition-colors ${
+                    currentPage === totalPages
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  →
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className='text-center py-16'>
-            <p className='text-gray-500 text-lg mb-4'>No knowledge bases created yet</p>
-            <p className='text-gray-400 text-sm mb-8'>Click "Create Knowledge" to get started</p>
-            <button
-              onClick={() => navigate('/create-knowledge')}
-              className='px-6 py-3 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95'
-            >
-              Create Your First Knowledge Base
-            </button>
+            <p className='text-gray-500 text-lg mb-4'>No knowledge found</p>
+            <p className='text-gray-400 text-sm'>Try adjusting your search query</p>
           </div>
         )}
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {isDeleteConfirmOpen && (
-        <>
-          {/* Backdrop */}
-          <div className='fixed inset-0 bg-black bg-opacity-50 z-40' onClick={handleCancelDelete} />
-          
-          {/* Confirmation Dialog */}
-          <div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
-            <div className='bg-white rounded-lg shadow-2xl w-full max-w-sm p-6'>
-              <h3 className='text-lg font-semibold text-gray-800 mb-4'>
-                ลบ Knowledge นี้หรือไม่?
-              </h3>
-              <p className='text-sm text-gray-600 mb-6'>
-                คุณแน่ใจหรือไม่ว่าต้องการลบ Knowledge นี้ การดำเนินการนี้ไม่สามารถเรียกคืนได้
-              </p>
-              <div className='flex gap-3 justify-end'>
-                <button
-                  type='button'
-                  onClick={handleCancelDelete}
-                  className='px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors'
-                >
-                  Cancel
-                </button>
-                <button
-                  type='button'
-                  onClick={handleConfirmDelete}
-                  className='px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200'
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
     </>
   );
 }

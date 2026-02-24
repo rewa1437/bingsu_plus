@@ -2,15 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   HiLightningBolt,
-  HiPencilAlt,
   HiOutlinePaperAirplane
 } from 'react-icons/hi';
 import bingsuLogo from '../assets/images/หน่องบิงไม่มีพื้นละ.png';
-import Dropdown from '../components/Dropdown';
 
 function Home() {
   const navigate = useNavigate();
-  const [selectedBot, setSelectedBot] = useState(null);
   const [chatInput, setChatInput] = useState('');
 
   // Frontend only - no API calls
@@ -25,27 +22,8 @@ function Home() {
     }
   };
 
-  const botOptions = [
-    { value: 'bot1', label: 'Bot 1' },
-    { value: 'bot2', label: 'Bot 2' },
-    { value: 'bot3', label: 'Bot 3' },
-  ];
-
   return (
     <>
-      {/* Top Bar */}
-      <div className='flex justify-between items-center mb-8'>
-        <Dropdown
-          options={botOptions}
-          selectedValue={selectedBot}
-          onSelect={setSelectedBot}
-          placeholder="Select Bots"
-        />
-        <button className='text-gray-600 text-xl cursor-pointer hover:text-gray-800 transition'>
-          <HiPencilAlt />
-        </button>
-      </div>
-
       {/* Welcome Section - Centered */}
       <div className='flex flex-col items-center justify-center flex-1'>
         {/* Mascot */}

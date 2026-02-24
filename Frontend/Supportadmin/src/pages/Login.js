@@ -21,11 +21,6 @@ function Login() {
   const [signUpError, setSignUpError] = useState('');
   const [signUpLoading, setSignUpLoading] = useState(false);
 
-  // Function to toggle between Sign in and Sign up
-  const toggleAuthMode = (mode) => {
-    setIsSignIn(mode);
-  };
-
   // Validation functions
   const isSignInValid = () => {
     return signInEmail.trim() !== '' && signInPassword.trim() !== '';
@@ -88,37 +83,12 @@ function Login() {
         border: '4px solid rgba(252,186,3,0.95)',
         boxShadow: '0 0 20px rgba(252,186,3,0.3), 0 10px 30px rgba(0,0,0,0.08)'
       }}>
-        {/* Tabs */}
-        <div className="absolute top-0 left-0 right-0 flex items-end bg-gray-200 rounded-tl-[28px] rounded-tr-[28px] transition-all duration-500 ease-in-out">
-          <button
-            onClick={() => toggleAuthMode(true)}
-            className={`text-sm font-medium py-2.5 flex-1 flex items-center justify-center transition-all duration-500 ease-in-out transform ${
-              isSignIn
-                ? 'bg-white text-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.1)] relative z-10 rounded-tl-[48px] rounded-br-[70px] scale-100'
-                : 'text-zinc-500 relative z-0 hover:text-zinc-600 hover:scale-[1.02] rounded-tl-[48px] rounded-tr-[48px] rounded-br-[16px] active:scale-[0.98]'
-            }`}
-          >
-            Sign in
-          </button>
-          <button
-            onClick={() => toggleAuthMode(false)}
-            className={`text-sm font-medium py-2.5 flex-1 flex items-center justify-center transition-all duration-500 ease-in-out transform ${
-              !isSignIn
-                ? 'bg-white text-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.1)] relative z-10 rounded-bl-[70px] rounded-tr-[48px] scale-100'
-                : 'text-zinc-500 relative z-0 hover:text-zinc-600 hover:scale-[1.02] rounded-tl-[48px] rounded-tr-[48px] rounded-br-[16px] active:scale-[0.98]'
-            }`}
-            style={{ marginLeft: '-8px' }}
-          >
-            Register
-          </button>
-        </div>
-
         <div className="flex flex-col items-center pt-8 transition-all duration-500 ease-in-out overflow-hidden">
           {/* Logo */}
           <div className="mb-4 h-20 w-20 flex items-center justify-center rounded-full bg-yellow-100 transition-all duration-500 ease-in-out hover:scale-110 hover:rotate-6 cursor-default overflow-hidden">
             <img src={bingsuLogo} alt="BingSu Logo" className="w-full h-full object-cover rounded-full" />
           </div>
-          <h2 className="mb-6 text-2xl font-bold text-zinc-800 transition-all duration-500 ease-in-out drop-shadow-lg" style={{ textShadow: '0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)' }}>BingSu</h2>
+          <h2 className="mb-6 text-2xl font-bold text-zinc-800 transition-all duration-500 ease-in-out drop-shadow-lg" style={{ textShadow: '0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(38, 0, 255, 0.06)' }}>BingSu Support</h2>
 
           <div className="w-full max-w-xs relative overflow-hidden" style={{ minHeight: '280px' }}>
             <div 
