@@ -322,6 +322,19 @@ function formatDate(dateStr) {
   return `${day}/${month}/${year}`;
 }
 
+// Calculate expiry date (6 months from today)
+function calculateExpiryDate() {
+  const today = new Date();
+  const expiry = new Date(today.getFullYear(), today.getMonth() + 6, today.getDate());
+  
+  const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+  const day = expiry.getDate();
+  const month = monthNames[expiry.getMonth()];
+  const year = expiry.getFullYear();
+  
+  return `${day} ${month} ${year}`;
+}
+
 // Get initials from name
 function getInitials(name) {
   if (!name) return '?';
@@ -392,7 +405,12 @@ function SupportPanel() {
     setConfirmRole({ open: true, idx, newRole });
   };
   const confirmRoleChange = () => {
-    setUsers(prev => prev.map((u, i) => i === confirmRole.idx ? { ...u, role: confirmRole.newRole } : u));
+    const user = users[confirmRole.idx];
+    const newExpiredAt = user.role === 'รอดำเนินการ' ? calculateExpiryDate() : user.expiredAt;
+    
+    setUsers(prev => prev.map((u, i) => 
+      i === confirmRole.idx ? { ...u, role: confirmRole.newRole, expiredAt: newExpiredAt } : u
+    ));
     setConfirmRole({ open: false, idx: null, newRole: '' });
     setOpenDropdown(null);
   };
@@ -405,9 +423,6 @@ function SupportPanel() {
     <div className="w-full px-6 py-8">
       <div className="bg-white shadow rounded-lg p-6 mb-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Support Panel</h1>
-        <p className="text-gray-600">
-          Support Panel page 
-        </p>
       </div>
 
       {/* User Count */}
@@ -476,16 +491,20 @@ function SupportPanel() {
                   </div>
                 </td>
                 <td className="py-2 align-middle">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Avatar name={user.name} />
-                    <span className={`text-[13px] ${!user.status ? 'text-gray-400' : 'text-gray-900'}`}>{user.name}</span>
+                    <span className={`text-[13px] truncate ${!user.status ? 'text-gray-400' : 'text-gray-900'}`} title={user.name}>{user.name}</span>
                   </div>
                 </td>
-                <td className={`py-2 align-middle text-[13px] ${!user.status ? 'text-gray-400' : 'text-gray-700'}`}>{user.email}</td>
+                <td className={`py-2 align-middle text-[13px] truncate ${!user.status ? 'text-gray-400' : 'text-gray-700'}`} title={user.email}>{user.email}</td>
                 <td className={`py-2 align-middle text-[13px] ${!user.status ? 'text-gray-400' : 'text-gray-700'}`}>{user.lastActive}</td>
                 <td className={`py-2 align-middle text-[13px] ${!user.status ? 'text-gray-400' : 'text-gray-700'}`}>{formatDate(user.createdAt)}</td>
                 <td className="py-2 align-middle">
-                  <span className="text-red-500 font-semibold text-[13px]">{formatDate(user.expiredAt)}</span>
+                  {user.role === 'รอดำเนินการ' ? (
+                    <span className="text-gray-400 text-[13px]">-</span>
+                  ) : (
+                    <span className="text-red-500 font-semibold text-[13px]">{formatDate(user.expiredAt)}</span>
+                  )}
                 </td>
                 <td className="py-2 align-middle">
                     <label className={`inline-flex items-center ${user.role === 'รอดำเนินการ' ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
