@@ -150,7 +150,7 @@ function Bots() {
                           onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(bot.id); setOpenMenuId(null); }}
                           className='w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 transition-colors last:rounded-b-lg'
                         >
-                          ลบ Bot
+                          ลบ Bot 123
                         </button>
                       </div>
                     )}
