@@ -1,3 +1,16 @@
+import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { 
+  HiChevronLeft, 
+  HiChevronRight, 
+  HiHome, 
+  HiDesktopComputer, 
+  HiBookOpen, 
+  HiSupport, 
+  HiOutlineUser 
+} from 'react-icons/hi';
+import bingsuLogo from '../assets/images/หน่องบิงไม่มีพื้นละ.png';
+
 function Navbar({ onCollapseChange }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const navigate = useNavigate();

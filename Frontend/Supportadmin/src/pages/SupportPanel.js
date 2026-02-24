@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HiOutlineUsers, HiOutlineUserGroup } from "react-icons/hi";
+import { HiChevronLeft, HiChevronRight, HiChevronDoubleLeft, HiChevronDoubleRight } from 'react-icons/hi';
 
 const mockUsers = [
   {
@@ -24,7 +24,259 @@ const mockUsers = [
     expired: true,
     status: false,
   },
-  // ...remaining mockUsers...
+  {
+    role: 'แอดมิน',
+    avatar: 'https://randomuser.me/api/portraits/women/3.jpg',
+    name: 'สมหญิง ใจดี',
+    email: 'admin@bingsu.com',
+    lastActive: '10 นาทีที่แล้ว',
+    createdAt: '1 มกราคม 2569',
+    expiredAt: '31 ธันวาคม 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/women/4.jpg',
+    name: 'ปิยะดา สุขสันต์',
+    email: 'piyada.s@example.com',
+    lastActive: '1 ชั่วโมงที่แล้ว',
+    createdAt: '15 กุมภาพันธ์ 2569',
+    expiredAt: '15 สิงหาคม 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/men/5.jpg',
+    name: 'วิชัย ประสงค์',
+    email: 'wichai.p@gmail.com',
+    lastActive: '3 วันที่แล้ว',
+    createdAt: '10 มีนาคม 2569',
+    expiredAt: '10 กันยายน 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'รอดำเนินการ',
+    avatar: 'https://randomuser.me/api/portraits/women/6.jpg',
+    name: 'นิภา รักษา',
+    email: 'nipha.r@yahoo.com',
+    lastActive: '5 นาทีที่แล้ว',
+    createdAt: '20 กุมภาพันธ์ 2569',
+    expiredAt: '20 สิงหาคม 2569',
+    expired: false,
+    status: false,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/men/7.jpg',
+    name: 'สมชาย มานะ',
+    email: 'somchai.m@hotmail.com',
+    lastActive: '1 สัปดาห์ที่แล้ว',
+    createdAt: '5 มกราคม 2569',
+    expiredAt: '5 กรกฎาคม 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/women/8.jpg',
+    name: 'จันทร์เพ็ญ สว่าง',
+    email: 'chanpen.s@outlook.com',
+    lastActive: '30 นาทีที่แล้ว',
+    createdAt: '12 กุมภาพันธ์ 2569',
+    expiredAt: '12 สิงหาคม 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'แอดมิน',
+    avatar: 'https://randomuser.me/api/portraits/men/9.jpg',
+    name: 'ธนากร วิทยา',
+    email: 'thanakorn.v@admin.com',
+    lastActive: '2 ชั่วโมงที่แล้ว',
+    createdAt: '1 มกราคม 2569',
+    expiredAt: '31 ธันวาคม 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/women/10.jpg',
+    name: 'สุภาพร ใจงาม',
+    email: 'supaporn.j@gmail.com',
+    lastActive: '4 วันที่แล้ว',
+    createdAt: '18 มกราคม 2569',
+    expiredAt: '18 กรกฎาคม 2569',
+    expired: false,
+    status: false,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/men/11.jpg',
+    name: 'ประยุทธ สมบูรณ์',
+    email: 'prayut.s@example.com',
+    lastActive: '12 ชั่วโมงที่แล้ว',
+    createdAt: '8 กุมภาพันธ์ 2569',
+    expiredAt: '8 สิงหาคม 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'รอดำเนินการ',
+    avatar: 'https://randomuser.me/api/portraits/women/12.jpg',
+    name: 'อรพิน ทรัพย์',
+    email: 'orapin.t@yahoo.com',
+    lastActive: '20 นาทีที่แล้ว',
+    createdAt: '22 กุมภาพันธ์ 2569',
+    expiredAt: '22 สิงหาคม 2569',
+    expired: false,
+    status: false,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/men/13.jpg',
+    name: 'ชัยยา ชนะ',
+    email: 'chaiya.c@hotmail.com',
+    lastActive: '6 ชั่วโมงที่แล้ว',
+    createdAt: '3 มีนาคม 2569',
+    expiredAt: '3 กันยายน 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/women/14.jpg',
+    name: 'วราพร สุขใจ',
+    email: 'waraporn.s@gmail.com',
+    lastActive: '15 นาทีที่แล้ว',
+    createdAt: '25 มกราคม 2569',
+    expiredAt: '25 กรกฎาคม 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/men/15.jpg',
+    name: 'ธีรพล ดี',
+    email: 'teeraphol.d@outlook.com',
+    lastActive: '2 วันที่แล้ว',
+    createdAt: '14 กุมภาพันธ์ 2569',
+    expiredAt: '14 สิงหาคม 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'แอดมิน',
+    avatar: 'https://randomuser.me/api/portraits/women/16.jpg',
+    name: 'พรทิพย์ เจริญ',
+    email: 'porntip.j@admin.com',
+    lastActive: '5 ชั่วโมงที่แล้ว',
+    createdAt: '1 มกราคม 2569',
+    expiredAt: '31 ธันวาคม 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/men/17.jpg',
+    name: 'อนุชา มั่นคง',
+    email: 'anucha.m@example.com',
+    lastActive: '8 ชั่วโมงที่แล้ว',
+    createdAt: '7 มกราคม 2569',
+    expiredAt: '7 กรกฎาคม 2569',
+    expired: false,
+    status: false,
+  },
+  {
+    role: 'รอดำเนินการ',
+    avatar: 'https://randomuser.me/api/portraits/women/18.jpg',
+    name: 'สุดารัตน์ ยิ้ม',
+    email: 'sudarat.y@gmail.com',
+    lastActive: '25 นาทีที่แล้ว',
+    createdAt: '23 กุมภาพันธ์ 2569',
+    expiredAt: '23 สิงหาคม 2569',
+    expired: false,
+    status: false,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/men/19.jpg',
+    name: 'ณัฐพล วงศ์',
+    email: 'nattaphon.w@yahoo.com',
+    lastActive: '3 ชั่วโมงที่แล้ว',
+    createdAt: '11 กุมภาพันธ์ 2569',
+    expiredAt: '11 สิงหาคม 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/women/20.jpg',
+    name: 'มาลี ดอกไม้',
+    email: 'malee.d@hotmail.com',
+    lastActive: '1 วันที่แล้ว',
+    createdAt: '5 กุมภาพันธ์ 2569',
+    expiredAt: '5 สิงหาคม 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/men/21.jpg',
+    name: 'พิชัย ก้าวหน้า',
+    email: 'phichai.k@gmail.com',
+    lastActive: '10 ชั่วโมงที่แล้ว',
+    createdAt: '16 มกราคม 2569',
+    expiredAt: '16 กรกฎาคม 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/women/22.jpg',
+    name: 'รัตนา แสงสว่าง',
+    email: 'rattana.s@outlook.com',
+    lastActive: '45 นาทีที่แล้ว',
+    createdAt: '19 กุมภาพันธ์ 2569',
+    expiredAt: '19 สิงหาคม 2569',
+    expired: false,
+    status: true,
+  },
+  {
+    role: 'รอดำเนินการ',
+    avatar: 'https://randomuser.me/api/portraits/men/23.jpg',
+    name: 'กิตติ รุ่งเรือง',
+    email: 'kitti.r@example.com',
+    lastActive: '35 นาทีที่แล้ว',
+    createdAt: '24 กุมภาพันธ์ 2569',
+    expiredAt: '24 สิงหาคม 2569',
+    expired: false,
+    status: false,
+  },
+  {
+    role: 'ผู้ใช้งาน',
+    avatar: 'https://randomuser.me/api/portraits/women/24.jpg',
+    name: 'ปราณี เพชร',
+    email: 'pranee.p@yahoo.com',
+    lastActive: '5 วันที่แล้ว',
+    createdAt: '9 มกราคม 2569',
+    expiredAt: '9 กรกฎาคม 2569',
+    expired: false,
+    status: false,
+  },
+  {
+    role: 'แอดมิน',
+    avatar: 'https://randomuser.me/api/portraits/men/25.jpg',
+    name: 'สมศักดิ์ เจริญสุข',
+    email: 'somsak.c@admin.com',
+    lastActive: '1 ชั่วโมงที่แล้ว',
+    createdAt: '1 มกราคม 2569',
+    expiredAt: '31 ธันวาคม 2569',
+    expired: false,
+    status: true,
+  },
 ];
 
 function RoleBadge({ role }) {
@@ -70,9 +322,50 @@ function formatDate(dateStr) {
   return `${day}/${month}/${year}`;
 }
 
+// Get initials from name
+function getInitials(name) {
+  if (!name) return '?';
+  return name.trim()[0].toUpperCase();
+}
+
+// Get avatar color based on name hash
+function getAvatarColor(name) {
+  const colors = [
+    { bg: 'bg-blue-500', text: 'text-white' },
+    { bg: 'bg-green-500', text: 'text-white' },
+    { bg: 'bg-purple-500', text: 'text-white' },
+    { bg: 'bg-pink-500', text: 'text-white' },
+    { bg: 'bg-indigo-500', text: 'text-white' },
+    { bg: 'bg-red-500', text: 'text-white' },
+    { bg: 'bg-yellow-500', text: 'text-gray-900' },
+    { bg: 'bg-teal-500', text: 'text-white' },
+    { bg: 'bg-orange-500', text: 'text-white' },
+    { bg: 'bg-cyan-500', text: 'text-white' },
+  ];
+  
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+}
+
+// Avatar component
+function Avatar({ name, size = 'w-7 h-7', fontSize = 'text-[11px]' }) {
+  const initials = getInitials(name);
+  const color = getAvatarColor(name);
+  
+  return (
+    <div className={`${size} ${color.bg} ${color.text} rounded-full flex items-center justify-center font-bold ${fontSize} shadow-sm`}>
+      {initials}
+    </div>
+  );
+}
+
 function SupportPanel() {
   const [search, setSearch] = useState('');
-  const [tab, setTab] = useState('overview');
   const [users, setUsers] = useState(() => mockUsers.map(u => ({ ...u, status: true })));
   const [confirmRole, setConfirmRole] = useState({ open: false, idx: null, newRole: '' });
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -109,8 +402,8 @@ function SupportPanel() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="bg-white shadow rounded-lg p-6">
+    <div className="w-full px-6 py-8">
+      <div className="bg-white shadow rounded-lg p-6 mb-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Support Panel</h1>
         <p className="text-gray-600">
           Support Panel page 
@@ -118,12 +411,12 @@ function SupportPanel() {
       </div>
 
       {/* User Count */}
-      <div className="px-4 pt-2 pb-0 min-w-[1100px]">
+      <div className="px-2 pt-2 pb-0">
         <div className="text-[18px] font-medium">User <span className="font-bold text-[22px]">{filteredUsers.length}</span></div>
       </div>
       {/* Search Bar */}
-      <div className="px-4 pt-1 pb-1 flex min-w-[1100px]">
-        <div className="flex-1">
+      <div className="px-2 pt-1 pb-1 flex">
+        <div className="flex-1 max-w-md">
           <div className="relative">
             <input
               type="text"
@@ -138,18 +431,18 @@ function SupportPanel() {
       </div>
 
       {/* Table */}
-      <div className="px-4 pt-2 overflow-x-auto">
-        <table className="min-w-[1100px] w-full text-left border-separate" style={{ borderSpacing: 0 }}>
+      <div className="px-2 pt-2 overflow-x-auto" style={{ minHeight: '1000px' }}>
+        <table className="w-full text-left border-separate" style={{ borderSpacing: 0 }}>
           <thead>
             <tr className="border-b border-gray-300">
-              <th className="py-2 font-semibold text-[13px] text-gray-700">บทบาท</th>
-              <th className="py-2 font-semibold text-[13px] text-gray-700">ชื่อ</th>
-              <th className="py-2 font-semibold text-[13px] text-gray-700">อีเมล</th>
-              <th className="py-2 font-semibold text-[13px] text-gray-700">ใช้งานล่าสุด</th>
-              <th className="py-2 font-semibold text-[13px] text-gray-700">สร้างเมื่อ</th>
-              <th className="py-2 font-semibold text-[13px] text-gray-700">วันหมดอายุ</th>
-              <th className="py-2 font-semibold text-[13px] text-gray-700">สถานะ</th>
-              <th className="py-2 font-semibold text-[13px] text-gray-700 text-right"></th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[10%]">บทบาท</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[18%]">ชื่อ</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[22%]">อีเมล</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[13%]">ใช้งานล่าสุด</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[12%]">สร้างเมื่อ</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[12%]">วันหมดอายุ</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[8%]">สถานะ</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 text-right w-[5%]"></th>
             </tr>
           </thead>
           <tbody>
@@ -184,7 +477,7 @@ function SupportPanel() {
                 </td>
                 <td className="py-2 align-middle">
                   <div className="flex items-center gap-2">
-                    <img src={user.avatar} alt="avatar" className="w-7 h-7 rounded-full border object-cover" />
+                    <Avatar name={user.name} />
                     <span className={`text-[13px] ${!user.status ? 'text-gray-400' : 'text-gray-900'}`}>{user.name}</span>
                   </div>
                 </td>
@@ -225,30 +518,156 @@ function SupportPanel() {
         </table>
       </div>
       {/* Pagination Controls */}
-      <div className="flex justify-center items-center gap-2 mt-4">
+      <div className="flex justify-center items-center gap-2 mt-6">
+        {/* First Page Button */}
         <button
-          className="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 flex items-center gap-1 disabled:opacity-50"
+          className="w-10 h-10 rounded-lg border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow"
+          onClick={() => setPage(1)}
+          disabled={page === 1}
+          title="หน้าแรก"
+        >
+          <HiChevronDoubleLeft className="text-lg" />
+        </button>
+        
+        {/* Previous Page Button */}
+        <button
+          className="w-10 h-10 rounded-lg border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow"
           onClick={() => setPage(page - 1)}
           disabled={page === 1}
+          title="ก่อนหน้า"
         >
-          <span>&lt;</span> Back
+          <HiChevronLeft className="text-lg" />
         </button>
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i + 1}
-            className={`px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 font-medium ${page === i + 1 ? 'bg-black text-white border-black' : ''}`}
-            onClick={() => setPage(i + 1)}
-          >
-            {i + 1}
-          </button>
-        ))}
+        
+        {/* Page Numbers with Ellipsis */}
+        <div className="flex items-center gap-2">
+          {(() => {
+            const pages = [];
+            const maxVisible = 5; // จำนวนหน้าที่แสดง
+            
+            if (totalPages <= maxVisible + 2) {
+              // แสดงทุกหน้า ถ้าน้อยกว่า maxVisible+2
+              for (let i = 1; i <= totalPages; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    className={`min-w-[40px] h-10 px-3 rounded-lg border-2 font-semibold transition-all duration-200 shadow-sm ${
+                      page === i
+                        ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white border-orange-500 shadow-md hover:shadow-lg scale-105'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow'
+                    }`}
+                    onClick={() => setPage(i)}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+            } else {
+              // หลายหน้า ใช้ ellipsis
+              const leftSiblingIndex = Math.max(page - 1, 1);
+              const rightSiblingIndex = Math.min(page + 1, totalPages);
+              
+              const shouldShowLeftDots = leftSiblingIndex > 2;
+              const shouldShowRightDots = rightSiblingIndex < totalPages - 1;
+              
+              // หน้าแรก
+              pages.push(
+                <button
+                  key={1}
+                  className={`min-w-[40px] h-10 px-3 rounded-lg border-2 font-semibold transition-all duration-200 shadow-sm ${
+                    page === 1
+                      ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white border-orange-500 shadow-md hover:shadow-lg scale-105'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow'
+                  }`}
+                  onClick={() => setPage(1)}
+                >
+                  1
+                </button>
+              );
+              
+              // Left ellipsis
+              if (shouldShowLeftDots) {
+                pages.push(
+                  <span key="left-dots" className="px-2 text-gray-500 font-bold">
+                    ...
+                  </span>
+                );
+              }
+              
+              // หน้ากลาง
+              for (let i = leftSiblingIndex; i <= rightSiblingIndex; i++) {
+                if (i !== 1 && i !== totalPages) {
+                  pages.push(
+                    <button
+                      key={i}
+                      className={`min-w-[40px] h-10 px-3 rounded-lg border-2 font-semibold transition-all duration-200 shadow-sm ${
+                        page === i
+                          ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white border-orange-500 shadow-md hover:shadow-lg scale-105'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow'
+                      }`}
+                      onClick={() => setPage(i)}
+                    >
+                      {i}
+                    </button>
+                  );
+                }
+              }
+              
+              // Right ellipsis
+              if (shouldShowRightDots) {
+                pages.push(
+                  <span key="right-dots" className="px-2 text-gray-500 font-bold">
+                    ...
+                  </span>
+                );
+              }
+              
+              // หน้าสุดท้าย
+              if (totalPages > 1) {
+                pages.push(
+                  <button
+                    key={totalPages}
+                    className={`min-w-[40px] h-10 px-3 rounded-lg border-2 font-semibold transition-all duration-200 shadow-sm ${
+                      page === totalPages
+                        ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white border-orange-500 shadow-md hover:shadow-lg scale-105'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow'
+                    }`}
+                    onClick={() => setPage(totalPages)}
+                  >
+                    {totalPages}
+                  </button>
+                );
+              }
+            }
+            
+            return pages;
+          })()}
+        </div>
+        
+        {/* Next Page Button */}
         <button
-          className="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 flex items-center gap-1 disabled:opacity-50"
+          className="w-10 h-10 rounded-lg border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow"
           onClick={() => setPage(page + 1)}
           disabled={page === totalPages}
+          title="ถัดไป"
         >
-          Next <span>&gt;</span>
+          <HiChevronRight className="text-lg" />
         </button>
+        
+        {/* Last Page Button */}
+        <button
+          className="w-10 h-10 rounded-lg border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow"
+          onClick={() => setPage(totalPages)}
+          disabled={page === totalPages}
+          title="หน้าสุดท้าย"
+        >
+          <HiChevronDoubleRight className="text-lg" />
+        </button>
+      </div>
+      
+      {/* Page Info */}
+      <div className="text-center mt-3 text-sm text-gray-600">
+        หน้า <span className="font-semibold text-orange-500">{page}</span> จาก <span className="font-semibold">{totalPages}</span>
       </div>
       {/* Confirm Role Popup */}
       {confirmRole.open && (

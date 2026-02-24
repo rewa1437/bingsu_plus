@@ -1,15 +1,13 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   HiLightningBolt,
   HiPencilAlt,
   HiOutlinePaperAirplane
 } from 'react-icons/hi';
 import bingsuLogo from '../assets/images/หน่องบิงไม่มีพื้นละ.png';
-import Dropdown from '../components/Dropdown';
+import { Dropdown } from '../components/Dropdown';
 
 function Home() {
-  const navigate = useNavigate();
   const [selectedBot, setSelectedBot] = useState(null);
   const [chatInput, setChatInput] = useState('');
 
