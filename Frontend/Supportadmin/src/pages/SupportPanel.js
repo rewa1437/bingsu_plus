@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HiChevronLeft, HiChevronRight, HiChevronDoubleLeft, HiChevronDoubleRight } from 'react-icons/hi';
+import { HiChevronLeft, HiChevronRight, HiChevronDoubleLeft, HiChevronDoubleRight, HiOutlineUsers, HiOutlineUserGroup } from 'react-icons/hi';
 
 const mockUsers = [
   {
@@ -12,6 +12,8 @@ const mockUsers = [
     expiredAt: '22 กุมภาพันธ์ 2569',
     expired: true,
     status: true,
+    bots: 2,
+    knowledge: 4,
   },
   {
     role: 'รอดำเนินการ',
@@ -23,6 +25,8 @@ const mockUsers = [
     expiredAt: '15 กรกฎาคม 2569',
     expired: true,
     status: false,
+    bots: 0,
+    knowledge: 0,
   },
   {
     role: 'แอดมิน',
@@ -34,6 +38,8 @@ const mockUsers = [
     expiredAt: '31 ธันวาคม 2569',
     expired: false,
     status: true,
+    bots: 3,
+    knowledge: 5,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -45,6 +51,8 @@ const mockUsers = [
     expiredAt: '15 สิงหาคม 2569',
     expired: false,
     status: true,
+    bots: 1,
+    knowledge: 3,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -56,6 +64,8 @@ const mockUsers = [
     expiredAt: '10 กันยายน 2569',
     expired: false,
     status: true,
+    bots: 3,
+    knowledge: 5,
   },
   {
     role: 'รอดำเนินการ',
@@ -67,6 +77,8 @@ const mockUsers = [
     expiredAt: '20 สิงหาคม 2569',
     expired: false,
     status: false,
+    bots: 0,
+    knowledge: 0,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -78,6 +90,8 @@ const mockUsers = [
     expiredAt: '5 กรกฎาคม 2569',
     expired: false,
     status: true,
+    bots: 2,
+    knowledge: 2,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -89,6 +103,8 @@ const mockUsers = [
     expiredAt: '12 สิงหาคม 2569',
     expired: false,
     status: true,
+    bots: 1,
+    knowledge: 4,
   },
   {
     role: 'แอดมิน',
@@ -100,6 +116,8 @@ const mockUsers = [
     expiredAt: '31 ธันวาคม 2569',
     expired: false,
     status: true,
+    bots: 3,
+    knowledge: 5,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -111,6 +129,8 @@ const mockUsers = [
     expiredAt: '18 กรกฎาคม 2569',
     expired: false,
     status: false,
+    bots: 1,
+    knowledge: 2,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -122,6 +142,8 @@ const mockUsers = [
     expiredAt: '8 สิงหาคม 2569',
     expired: false,
     status: true,
+    bots: 2,
+    knowledge: 3,
   },
   {
     role: 'รอดำเนินการ',
@@ -133,6 +155,8 @@ const mockUsers = [
     expiredAt: '22 สิงหาคม 2569',
     expired: false,
     status: false,
+    bots: 0,
+    knowledge: 0,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -144,6 +168,8 @@ const mockUsers = [
     expiredAt: '3 กันยายน 2569',
     expired: false,
     status: true,
+    bots: 3,
+    knowledge: 4,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -155,6 +181,8 @@ const mockUsers = [
     expiredAt: '25 กรกฎาคม 2569',
     expired: false,
     status: true,
+    bots: 1,
+    knowledge: 1,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -166,6 +194,8 @@ const mockUsers = [
     expiredAt: '14 สิงหาคม 2569',
     expired: false,
     status: true,
+    bots: 2,
+    knowledge: 5,
   },
   {
     role: 'แอดมิน',
@@ -177,6 +207,8 @@ const mockUsers = [
     expiredAt: '31 ธันวาคม 2569',
     expired: false,
     status: true,
+    bots: 3,
+    knowledge: 5,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -188,6 +220,8 @@ const mockUsers = [
     expiredAt: '7 กรกฎาคม 2569',
     expired: false,
     status: false,
+    bots: 1,
+    knowledge: 3,
   },
   {
     role: 'รอดำเนินการ',
@@ -199,6 +233,8 @@ const mockUsers = [
     expiredAt: '23 สิงหาคม 2569',
     expired: false,
     status: false,
+    bots: 0,
+    knowledge: 0,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -210,6 +246,8 @@ const mockUsers = [
     expiredAt: '11 สิงหาคม 2569',
     expired: false,
     status: true,
+    bots: 2,
+    knowledge: 4,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -221,6 +259,8 @@ const mockUsers = [
     expiredAt: '5 สิงหาคม 2569',
     expired: false,
     status: true,
+    bots: 1,
+    knowledge: 2,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -232,6 +272,8 @@ const mockUsers = [
     expiredAt: '16 กรกฎาคม 2569',
     expired: false,
     status: true,
+    bots: 3,
+    knowledge: 5,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -243,6 +285,8 @@ const mockUsers = [
     expiredAt: '19 สิงหาคม 2569',
     expired: false,
     status: true,
+    bots: 2,
+    knowledge: 3,
   },
   {
     role: 'รอดำเนินการ',
@@ -254,6 +298,8 @@ const mockUsers = [
     expiredAt: '24 สิงหาคม 2569',
     expired: false,
     status: false,
+    bots: 0,
+    knowledge: 0,
   },
   {
     role: 'ผู้ใช้งาน',
@@ -265,6 +311,8 @@ const mockUsers = [
     expiredAt: '9 กรกฎาคม 2569',
     expired: false,
     status: false,
+    bots: 1,
+    knowledge: 1,
   },
   {
     role: 'แอดมิน',
@@ -276,6 +324,8 @@ const mockUsers = [
     expiredAt: '31 ธันวาคม 2569',
     expired: false,
     status: true,
+    bots: 3,
+    knowledge: 5,
   },
 ];
 
@@ -383,6 +433,7 @@ function SupportPanel() {
   const [confirmRole, setConfirmRole] = useState({ open: false, idx: null, newRole: '' });
   const [openDropdown, setOpenDropdown] = useState(null);
   const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState('overview');
   const pageSize = 20;
 
   const filteredUsers = users.filter(
@@ -421,17 +472,45 @@ function SupportPanel() {
 
   return (
     <div className="w-full px-6 py-8">
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Support Panel</h1>
+      {/* Tab Navigation */}
+      <div className="bg-white shadow rounded-t-lg border-b border-gray-200">
+        <div className="flex gap-8 px-6">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`py-4 px-2 font-semibold text-[15px] border-b-2 transition-all duration-200 ${
+              activeTab === 'overview'
+                ? 'text-gray-900 border-blue-500'
+                : 'text-gray-500 border-transparent hover:text-gray-700'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <HiOutlineUsers /> Overview
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('groups')}
+            className={`py-4 px-2 font-semibold text-[15px] border-b-2 transition-all duration-200 ${
+              activeTab === 'groups'
+                ? 'text-gray-900 border-blue-500'
+                : 'text-gray-500 border-transparent hover:text-gray-700'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <HiOutlineUserGroup /> Groups
+            </span>
+          </button>
+        </div>
       </div>
 
-      {/* User Count */}
-      <div className="px-2 pt-2 pb-0">
-        <div className="text-[18px] font-medium">User <span className="font-bold text-[22px]">{filteredUsers.length}</span></div>
-      </div>
-      {/* Search Bar */}
-      <div className="px-2 pt-1 pb-1 flex">
-        <div className="flex-1 max-w-md">
+      {/* Content Container */}
+      <div className="bg-white rounded-b-lg shadow">
+        {/* User Count */}
+        <div className="px-6 pt-4 pb-0">
+          <div className="text-[18px] font-medium">User <span className="font-bold text-[22px]">{filteredUsers.length}</span></div>
+        </div>
+        {/* Search Bar */}
+        <div className="px-6 pt-2 pb-2 flex">
+          <div className="flex-1 max-w-md">
           <div className="relative">
             <input
               type="text"
@@ -443,21 +522,23 @@ function SupportPanel() {
             <svg className="absolute left-1 top-1.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
           </div>
         </div>
-      </div>
+        </div>
 
       {/* Table */}
-      <div className="px-2 pt-2 overflow-x-auto" style={{ minHeight: '1000px' }}>
+      <div className="px-6 pt-2 pb-2 overflow-x-auto" style={{ minHeight: '1000px' }}>
         <table className="w-full text-left border-separate" style={{ borderSpacing: 0 }}>
           <thead>
             <tr className="border-b border-gray-300">
-              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[10%]">บทบาท</th>
-              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[18%]">ชื่อ</th>
-              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[22%]">อีเมล</th>
-              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[13%]">ใช้งานล่าสุด</th>
-              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[12%]">สร้างเมื่อ</th>
-              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[12%]">วันหมดอายุ</th>
-              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[8%]">สถานะ</th>
-              <th className="py-2 font-semibold text-[13px] text-gray-700 text-right w-[5%]"></th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[8%]">บทบาท</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[14%]">ชื่อ</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[16%]">อีเมล</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[7%]">Bots</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[7%]">Knowledge</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[10%]">ใช้งานล่าสุด</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[9%]">สร้างเมื่อ</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[9%]">วันหมดอายุ</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 w-[6%]">สถานะ</th>
+              <th className="py-2 font-semibold text-[13px] text-gray-700 text-right w-[4%]"></th>
             </tr>
           </thead>
           <tbody>
@@ -497,6 +578,12 @@ function SupportPanel() {
                   </div>
                 </td>
                 <td className={`py-2 align-middle text-[13px] truncate ${!user.status ? 'text-gray-400' : 'text-gray-700'}`} title={user.email}>{user.email}</td>
+                <td className="py-2 align-middle text-center">
+                  <span className="font-semibold text-[13px] text-gray-700">{user.bots}/3</span>
+                </td>
+                <td className="py-2 align-middle text-center">
+                  <span className="font-semibold text-[13px] text-gray-700">{user.knowledge}/5</span>
+                </td>
                 <td className={`py-2 align-middle text-[13px] ${!user.status ? 'text-gray-400' : 'text-gray-700'}`}>{user.lastActive}</td>
                 <td className={`py-2 align-middle text-[13px] ${!user.status ? 'text-gray-400' : 'text-gray-700'}`}>{formatDate(user.createdAt)}</td>
                 <td className="py-2 align-middle">
@@ -536,6 +623,8 @@ function SupportPanel() {
           </tbody>
         </table>
       </div>
+      </div>
+
       {/* Pagination Controls */}
       <div className="flex justify-center items-center gap-2 mt-6">
         {/* First Page Button */}
