@@ -1,4 +1,4 @@
-import { HiSearch, HiEllipsisVertical } from 'react-icons/hi';
+import { HiSearch, HiTrash } from 'react-icons/hi';
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { botListRaw, BOT_LIMIT_PER_USER } from '../data/botsData';
@@ -7,8 +7,7 @@ function Bots() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const itemsPerPage = 12;
   
   // Avatar color variants
@@ -69,20 +68,10 @@ function Bots() {
     navigate(`/bots/${bot.id}`, { state: { bot } });
   };
 
-  const getBotProfileColor = (botId) => {
-    const colors = [
-      'from-blue-500 to-blue-600',
-      'from-purple-500 to-purple-600',
-      'from-pink-500 to-pink-600',
-      'from-indigo-500 to-indigo-600',
-      'from-green-500 to-green-600',
-      'from-yellow-500 to-yellow-600',
-      'from-red-500 to-red-600',
-      'from-teal-500 to-teal-600',
-      'from-orange-500 to-orange-600',
-      'from-cyan-500 to-cyan-600'
-    ];
-    return colors[botId % colors.length];
+  const handleConfirmDelete = () => {
+    if (confirmDeleteId === null) return;
+    setBotList(botList.filter((bot) => bot.id !== confirmDeleteId));
+    setConfirmDeleteId(null);
   };
 
   return (
@@ -118,81 +107,41 @@ function Bots() {
                   key={bot.id} 
                   className='bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col'
                 >
-                  <div className='flex items-start gap-4 mb-4'>
-                    {/* Avatar */}
-                    <div className={`w-12 h-12 rounded-full ${bot.color} flex-shrink-0 transition-all ${
-                      !bot.enabled ? 'grayscale opacity-50' : ''
-                    }`}></div>
-                    
-                    {/* Content */}
-                    <div className={`flex-1 min-w-0 transition-all ${
-                      !bot.enabled ? 'opacity-50' : ''
-                    }`}>
-                      <h3 className={`text-base font-semibold mb-1 ${
-                        bot.enabled ? 'text-gray-800' : 'text-gray-400'
-                      }`}>{bot.name}</h3>
-                      <p className={`text-sm ${
-                        bot.enabled ? 'text-gray-600' : 'text-gray-400'
-                      }`}>{bot.description || 'No description'}</p>
+                  {/* Top row: Avatar/Name + Status Switch */}
+                  <div className='flex items-start justify-between gap-4 mb-4'>
+                    <div className='flex items-start gap-4 flex-1'>
+                      {/* Avatar */}
+                      <div className={`w-12 h-12 rounded-full ${bot.color} flex-shrink-0 transition-all ${
+                        !bot.enabled ? 'grayscale opacity-50' : ''
+                      }`}></div>
+                      
+                      {/* Content */}
+                      <div className={`flex-1 min-w-0 transition-all ${
+                        !bot.enabled ? 'opacity-50' : ''
+                      }`}>
+                        <h3 className={`text-base font-semibold mb-1 ${
+                          bot.enabled ? 'text-gray-800' : 'text-gray-400'
+                        }`}>{bot.name}</h3>
+                      </div>
                     </div>
 
-                    {/* Menu Button */}
+                    {/* Status Toggle */}
                     <button
                       type='button'
-                      onClick={() => setOpenMenuId(openMenuId === bot.id ? null : bot.id)}
-                      className='relative p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0'
-                      aria-label='Bot menu'
+                      onClick={(e) => handleStatusToggle(e, bot.id)}
+                      className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none flex-shrink-0 ${
+                          bot.enabled ? 'bg-green-500' : 'bg-gray-300'
+                      }`}
                     >
-                      <HiEllipsisVertical className='text-xl text-gray-600' />
+                      <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
+                        bot.enabled ? 'translate-x-6' : 'translate-x-1'
+                      }`} />
                     </button>
-
-                    {/* Dropdown Menu */}
-                    {openMenuId === bot.id && (
-                      <div className='absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48'>
-                        {/* Edit Option */}
-                        <button
-                          type='button'
-                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); navigate('/create-bot', { state: { bot } }); }}
-                          className='w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-200 first:rounded-t-lg text-gray-700'
-                        >
-                          แก้ไข
-                        </button>
-
-                        {/* Delete Option */}
-                        <button
-                          type='button'
-                          onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(bot.id); setOpenMenuId(null); }}
-                          className='w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 transition-colors last:rounded-b-lg'
-                        >
-                          ลบ Bot 123
-                        </button>
-                      </div>
-                    )}
                   </div>
 
-                  <div className='flex-1 flex flex-col gap-3'>
-                    <div>
-                      <p className='text-sm text-gray-600 mb-3'>{bot.description || 'No description'}</p>
-                      <span className={`inline-block px-3 py-1 text-xs rounded-full font-semibold ${bot.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}`}>
-                        {bot.enabled ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
-                    
-                    {/* Toggle Switch */}
-                    <label className='flex items-center gap-3 mt-2'>
-                      <span className='text-sm text-gray-600'>Status:</span>
-                      <button
-                        type='button'
-                        onClick={(e) => handleStatusToggle(e, bot.id)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 ${
-                            bot.enabled ? 'bg-yellow-400' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                          bot.enabled ? 'translate-x-5' : 'translate-x-0.5'
-                        }`} />
-                      </button>
-                    </label>
+                  {/* Description */}
+                  <div className='mb-3'>
+                    <p className='text-sm text-gray-600'>{bot.description || 'No description'}</p>
                   </div>
                   
                   {/* Bottom row: Username and Detail Button */}
@@ -200,17 +149,27 @@ function Bots() {
                     <p className={`text-xs ${
                       bot.enabled ? 'text-gray-500' : 'text-gray-400'
                     }`}>By {bot.username}</p>
-                    <button
-                      onClick={() => handleBotClick(bot)}
-                      className='px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-sm'
-                    >
-                      รายละเอียด
-                    </button>
+                    <div className='flex items-center gap-2'>
+                      <button
+                        onClick={() => handleBotClick(bot)}
+                        className='px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-sm'
+                      >
+                        รายละเอียด
+                      </button>
+                      <button
+                        type='button'
+                        onClick={() => setConfirmDeleteId(bot.id)}
+                        className='inline-flex items-center gap-2 px-3 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium'
+                      >
+                        <HiTrash className='text-lg' />
+                        ลบ
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
             })}
-          </div>
+            </div>
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -281,6 +240,31 @@ function Bots() {
           </div>
         )}
       </div>
+
+      {confirmDeleteId !== null && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4'>
+          <div className='w-full max-w-sm rounded-xl bg-white p-6 shadow-lg'>
+            <h3 className='text-lg font-semibold text-gray-800 mb-2'>ยืนยันการลบ</h3>
+            <p className='text-sm text-gray-600 mb-5'>ต้องการลบบอทนี้ใช่ไหม?</p>
+            <div className='flex justify-end gap-2'>
+              <button
+                type='button'
+                onClick={() => setConfirmDeleteId(null)}
+                className='px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50'
+              >
+                ยกเลิก
+              </button>
+              <button
+                type='button'
+                onClick={handleConfirmDelete}
+                className='px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600'
+              >
+                ลบ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

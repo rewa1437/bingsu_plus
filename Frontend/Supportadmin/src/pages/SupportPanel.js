@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { HiSearch, HiFilter, HiPlus, HiUserGroup, HiEye, HiEyeOff } from 'react-icons/hi';
+import { HiSearch, HiFilter, HiPlus, HiUserGroup, HiEye, HiEyeOff, HiTrash, HiOutlineClock, HiOutlineKey, HiOutlineUserRemove, HiOutlinePencil } from 'react-icons/hi';
 import { botListRaw, BOT_LIMIT_PER_USER } from '../data/botsData';
 import { knowledgeListRaw, KNOWLEDGE_LIMIT_PER_USER } from '../data/knowledgeData';
 
@@ -26,6 +26,8 @@ function SupportPanel({ users, setUsers }) {
   const [groupProfileDescription, setGroupProfileDescription] = useState('');
   const [editMembersSearchQuery, setEditMembersSearchQuery] = useState('');
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
+  const [confirmDeleteUserId, setConfirmDeleteUserId] = useState(null);
+  const [confirmDeleteGroupId, setConfirmDeleteGroupId] = useState(null);
   const [targetUserId, setTargetUserId] = useState(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -189,6 +191,16 @@ function SupportPanel({ users, setUsers }) {
   const targetUser = useMemo(
     () => users.find((user) => user.id === targetUserId) || null,
     [users, targetUserId]
+  );
+
+  const deleteTargetUser = useMemo(
+    () => users.find((user) => user.id === confirmDeleteUserId) || null,
+    [users, confirmDeleteUserId]
+  );
+
+  const deleteTargetGroup = useMemo(
+    () => groups.find((group) => group.id === confirmDeleteGroupId) || null,
+    [groups, confirmDeleteGroupId]
   );
 
   const calculatedExtendedDate = (() => {
@@ -387,6 +399,36 @@ function SupportPanel({ users, setUsers }) {
     setTargetUserId(null);
   };
 
+  const handleDeleteUser = (userId) => {
+    setConfirmDeleteUserId(userId);
+    setOpenActionMenuUserId(null);
+  };
+
+  const handleConfirmDeleteUser = () => {
+    if (confirmDeleteUserId === null) return;
+    setUsers(users.filter((user) => user.id !== confirmDeleteUserId));
+    setConfirmDeleteUserId(null);
+  };
+
+  const handleCancelDeleteUser = () => {
+    setConfirmDeleteUserId(null);
+  };
+
+  const handleDeleteGroup = (groupId) => {
+    setConfirmDeleteGroupId(groupId);
+    setOpenGroupActionMenuId(null);
+  };
+
+  const handleConfirmDeleteGroup = () => {
+    if (confirmDeleteGroupId === null) return;
+    setGroups(groups.filter((group) => group.id !== confirmDeleteGroupId));
+    setConfirmDeleteGroupId(null);
+  };
+
+  const handleCancelDeleteGroup = () => {
+    setConfirmDeleteGroupId(null);
+  };
+
   const handleOpenCreateGroupModal = () => {
     setNewGroupName('');
     setNewGroupDescription('');
@@ -530,14 +572,14 @@ function SupportPanel({ users, setUsers }) {
 
       {/* Search Bar */}
       <div className="mb-6">
-        <div className="relative">
+        <div className="relative max-w-md">
           <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
             placeholder="Search User"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-gray-700 placeholder-gray-400"
           />
         </div>
       </div>
@@ -699,15 +741,24 @@ function SupportPanel({ users, setUsers }) {
                         <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-[110] overflow-hidden">
                           <button
                             onClick={() => handleOpenPasswordModal(user.id)}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 inline-flex items-center gap-2"
                           >
+                            <HiOutlineKey className="w-4 h-4" />
                             แก้ไขรหัสผ่าน
                           </button>
                           <button
                             onClick={() => handleOpenExtendModal(user.id)}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100 inline-flex items-center gap-2"
                           >
+                            <HiOutlineClock className="w-4 h-4" />
                             ต่อวันหมดอายุ
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-gray-100 inline-flex items-center gap-2"
+                          >
+                            <HiTrash className="w-4 h-4" />
+                            ลบผู้ใช้
                           </button>
                         </div>
                       )}
@@ -768,7 +819,7 @@ function SupportPanel({ users, setUsers }) {
                 placeholder="Search Group"
                 value={groupSearchQuery}
                 onChange={(e) => setGroupSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-gray-700 placeholder-gray-400"
               />
             </div>
             <button
@@ -826,15 +877,24 @@ function SupportPanel({ users, setUsers }) {
                             <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-[120] overflow-hidden">
                               <button
                                 onClick={() => handleOpenGroupProfileModal(group.id)}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 inline-flex items-center gap-2"
                               >
+                                <HiOutlinePencil className="w-4 h-4" />
                                 โปรไฟล์กลุ่ม
                               </button>
                               <button
                                 onClick={() => handleOpenEditMembersModal(group.id)}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100 inline-flex items-center gap-2"
                               >
+                                <HiOutlineUserRemove className="w-4 h-4" />
                                 แก้ไขสมาชิก
+                              </button>
+                              <button
+                                onClick={() => handleDeleteGroup(group.id)}
+                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-gray-100 inline-flex items-center gap-2"
+                              >
+                                <HiTrash className="w-4 h-4" />
+                                ลบกลุ่ม
                               </button>
                             </div>
                           )}
@@ -1049,7 +1109,7 @@ function SupportPanel({ users, setUsers }) {
             className="w-full max-w-4xl bg-gray-100 rounded-3xl p-8 shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 className="text-3xl font-normal text-gray-900 mb-6">โปรไฟล์กลุ่ม</h3>
+            <h3 className="text-3xl font-semibold text-gray-900 mb-6">โปรไฟล์กลุ่ม</h3>
 
             <div className="mb-5 text-lg text-gray-900">
               <span className="mr-4">ชื่อ</span>
@@ -1158,6 +1218,66 @@ function SupportPanel({ users, setUsers }) {
                 className="px-10 py-2.5 rounded-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 text-base font-semibold transition-colors"
               >
                 Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDeleteUserId !== null && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 p-6">
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">ยืนยันการลบผู้ใช้</h3>
+            <p className="text-sm text-gray-600 mb-5">
+              ต้องการลบผู้ใช้ {deleteTargetUser?.username || ''} ใช่ไหม?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleCancelDeleteUser}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteUser}
+                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
+              >
+                ลบผู้ใช้
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDeleteGroupId !== null && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 p-6">
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">ยืนยันการลบกลุ่ม</h3>
+            <p className="text-sm text-gray-600 mb-5">
+              ต้องการลบกลุ่ม {deleteTargetGroup?.name || ''} ใช่ไหม?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleCancelDeleteGroup}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteGroup}
+                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
+              >
+                ลบกลุ่ม
               </button>
             </div>
           </div>

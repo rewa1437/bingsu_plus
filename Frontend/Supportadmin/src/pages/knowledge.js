@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { HiSearch } from 'react-icons/hi';
+import { HiSearch, HiTrash } from 'react-icons/hi';
 import { useState, useMemo, useEffect } from 'react';
 import { knowledgeListRaw, KNOWLEDGE_LIMIT_PER_USER } from '../data/knowledgeData';
 
@@ -7,6 +7,7 @@ function Knowledge() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const itemsPerPage = 12;
   const getCappedKnowledgeList = (rawList) => {
     const userKnowledgeCount = {};
@@ -17,7 +18,7 @@ function Knowledge() {
     });
   };
 
-  const [knowledgeList] = useState(() => getCappedKnowledgeList(knowledgeListRaw));
+  const [knowledgeList, setKnowledgeList] = useState(() => getCappedKnowledgeList(knowledgeListRaw));
 
   // Filter knowledge based on search query
   const filteredKnowledgeList = useMemo(() => {
@@ -42,6 +43,12 @@ function Knowledge() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
+
+  const handleConfirmDelete = () => {
+    if (confirmDeleteId === null) return;
+    setKnowledgeList(knowledgeList.filter((knowledge) => knowledge.id !== confirmDeleteId));
+    setConfirmDeleteId(null);
+  };
 
   return (
     <>
@@ -80,16 +87,26 @@ function Knowledge() {
                 </div>
                 <div className='flex justify-between items-center mt-4'>
                   <p className='text-xs text-gray-500'>By {knowledge.username}</p>
-                  <button
-                    onClick={() =>
-                      navigate(`/knowledge/${knowledge.id}/add-data`, {
-                        state: { knowledgeName: knowledge.name },
-                      })
-                    }
-                    className='px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-sm'
-                  >
-                    รายละเอียด
-                  </button>
+                  <div className='flex items-center gap-2'>
+                    <button
+                      onClick={() =>
+                        navigate(`/knowledge/${knowledge.id}/add-data`, {
+                          state: { knowledgeName: knowledge.name },
+                        })
+                      }
+                      className='px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-sm'
+                    >
+                      รายละเอียด
+                    </button>
+                    <button
+                      type='button'
+                      onClick={() => setConfirmDeleteId(knowledge.id)}
+                      className='inline-flex items-center gap-2 px-3 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium'
+                    >
+                      <HiTrash className='text-lg' />
+                      ลบ
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -164,6 +181,31 @@ function Knowledge() {
           </div>
         )}
       </div>
+
+      {confirmDeleteId !== null && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4'>
+          <div className='w-full max-w-sm rounded-xl bg-white p-6 shadow-lg'>
+            <h3 className='text-lg font-semibold text-gray-800 mb-2'>ยืนยันการลบ</h3>
+            <p className='text-sm text-gray-600 mb-5'>ต้องการลบรายการนี้ใช่ไหม?</p>
+            <div className='flex justify-end gap-2'>
+              <button
+                type='button'
+                onClick={() => setConfirmDeleteId(null)}
+                className='px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50'
+              >
+                ยกเลิก
+              </button>
+              <button
+                type='button'
+                onClick={handleConfirmDelete}
+                className='px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600'
+              >
+                ลบ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

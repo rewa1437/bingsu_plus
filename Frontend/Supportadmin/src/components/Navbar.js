@@ -6,8 +6,7 @@ import {
   HiHome, 
   HiDesktopComputer, 
   HiBookOpen, 
-  HiSupport, 
-  HiOutlineUser 
+  HiSupport
 } from 'react-icons/hi';
 import bingsuLogo from '../assets/images/หน่องบิงไม่มีพื้นละ.png';
 import ProfileModal from './ProfileModal';
