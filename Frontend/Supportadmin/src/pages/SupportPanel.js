@@ -15,8 +15,17 @@ function SupportPanel({ users, setUsers }) {
   const [groupSearchQuery, setGroupSearchQuery] = useState('');
   const [highlightedUserId, setHighlightedUserId] = useState(null);
   const [openActionMenuUserId, setOpenActionMenuUserId] = useState(null);
+  const [openGroupActionMenuId, setOpenGroupActionMenuId] = useState(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showExtendModal, setShowExtendModal] = useState(false);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [showGroupProfileModal, setShowGroupProfileModal] = useState(false);
+  const [showEditMembersModal, setShowEditMembersModal] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const [groupProfileName, setGroupProfileName] = useState('');
+  const [groupProfileDescription, setGroupProfileDescription] = useState('');
+  const [editMembersSearchQuery, setEditMembersSearchQuery] = useState('');
+  const [selectedMemberIds, setSelectedMemberIds] = useState([]);
   const [targetUserId, setTargetUserId] = useState(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -24,19 +33,22 @@ function SupportPanel({ users, setUsers }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [extendDays, setExtendDays] = useState('30');
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupDescription, setNewGroupDescription] = useState('');
   const filterRef = useRef(null);
   const actionMenuRef = useRef(null);
+  const groupActionMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const itemsPerPage = 20;
 
   // Mock groups data
-  const [groups] = useState([
-    { id: 1, name: 'พพอ.', memberCount: 2, avatar: 'พ' },
-    { id: 2, name: 'บิงชู', memberCount: 2, avatar: 'บ' },
-    { id: 3, name: 'ถั่วแระ', memberCount: 4, avatar: 'ถ' },
-    { id: 4, name: 'อชจ.', memberCount: 3, avatar: 'อ' },
-    { id: 5, name: 'บักอะ', memberCount: 3, avatar: 'บ' }
+  const [groups, setGroups] = useState([
+    { id: 1, name: 'พพอ.', description: 'กลุ่มงานหลัก', avatar: 'พ', members: [3, 6] },
+    { id: 2, name: 'บิงชู', description: 'กลุ่มฝ่ายขาย', avatar: 'บ', members: [8, 10] },
+    { id: 3, name: 'ถั่วแระ', description: 'กลุ่มดูแลลูกค้า', avatar: 'ถ', members: [14, 16, 18, 21] },
+    { id: 4, name: 'อชจ.', description: 'กลุ่มทดสอบระบบ', avatar: 'อ', members: [23, 24, 27] },
+    { id: 5, name: 'บักอะ', description: 'กลุ่มสำรอง', avatar: 'บ', members: [29, 30, 33] }
   ]);
 
   const handleToggleStatus = (userId) => {
@@ -98,6 +110,10 @@ function SupportPanel({ users, setUsers }) {
 
       if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
         setOpenActionMenuUserId(null);
+      }
+
+      if (groupActionMenuRef.current && !groupActionMenuRef.current.contains(event.target)) {
+        setOpenGroupActionMenuId(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -253,6 +269,79 @@ function SupportPanel({ users, setUsers }) {
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
+  const userByIdMap = useMemo(() => {
+    return users.reduce((accumulator, user) => {
+      accumulator[user.id] = user;
+      return accumulator;
+    }, {});
+  }, [users]);
+
+  const groupedUsers = useMemo(() => users.filter((user) => user.roleType === 'user'), [users]);
+
+  const selectedGroup = useMemo(
+    () => groups.find((group) => group.id === selectedGroupId) || null,
+    [groups, selectedGroupId]
+  );
+
+  const selectedGroupMembers = useMemo(() => {
+    if (!selectedGroup) return [];
+    return (selectedGroup.members || [])
+      .map((memberId) => userByIdMap[memberId])
+      .filter(Boolean);
+  }, [selectedGroup, userByIdMap]);
+
+  const selectableMembers = useMemo(() => {
+    if (!selectedGroup) return [];
+
+    const currentGroupMemberIds = new Set(selectedGroup.members || []);
+    const memberIdsInOtherGroups = new Set(
+      groups
+        .filter((group) => group.id !== selectedGroup.id)
+        .flatMap((group) => group.members || [])
+    );
+
+    const normalizedSearch = editMembersSearchQuery.trim().toLowerCase();
+
+    return groupedUsers
+      .filter((user) => {
+        if (!currentGroupMemberIds.has(user.id) && memberIdsInOtherGroups.has(user.id)) {
+          return false;
+        }
+
+        if (!normalizedSearch) {
+          return true;
+        }
+
+        return (
+          user.username.toLowerCase().includes(normalizedSearch) ||
+          user.email.toLowerCase().includes(normalizedSearch)
+        );
+      })
+      .sort((firstUser, secondUser) => firstUser.username.localeCompare(secondUser.username, 'th'));
+  }, [editMembersSearchQuery, groupedUsers, groups, selectedGroup]);
+
+  const orderedSelectableMembers = useMemo(() => {
+    const selectedIds = new Set(selectedMemberIds);
+
+    return [...selectableMembers].sort((firstUser, secondUser) => {
+      const firstSelected = selectedIds.has(firstUser.id);
+      const secondSelected = selectedIds.has(secondUser.id);
+
+      if (firstSelected !== secondSelected) {
+        return firstSelected ? -1 : 1;
+      }
+
+      return firstUser.username.localeCompare(secondUser.username, 'th');
+    });
+  }, [selectableMembers, selectedMemberIds]);
+
+  const getGroupMemberCount = (group) => {
+    if (Array.isArray(group.members)) {
+      return group.members.length;
+    }
+    return group.memberCount || 0;
+  };
+
   const handleOpenPasswordModal = (userId) => {
     setTargetUserId(userId);
     setOpenActionMenuUserId(null);
@@ -296,6 +385,113 @@ function SupportPanel({ users, setUsers }) {
     setUsers(users.map((user) => (user.id === targetUser.id ? { ...user, expiresAt: nextExpiry } : user)));
     setShowExtendModal(false);
     setTargetUserId(null);
+  };
+
+  const handleOpenCreateGroupModal = () => {
+    setNewGroupName('');
+    setNewGroupDescription('');
+    setShowCreateGroupModal(true);
+  };
+
+  const handleCloseCreateGroupModal = () => {
+    setShowCreateGroupModal(false);
+  };
+
+  const handleCreateGroup = () => {
+    const trimmedGroupName = newGroupName.trim();
+    const trimmedGroupDescription = newGroupDescription.trim();
+
+    if (!trimmedGroupName) {
+      return;
+    }
+
+    setGroups((prevGroups) => {
+      const nextId = prevGroups.length > 0 ? Math.max(...prevGroups.map((group) => group.id)) + 1 : 1;
+      return [
+        {
+          id: nextId,
+          name: trimmedGroupName,
+          description: trimmedGroupDescription,
+          members: [],
+          avatar: trimmedGroupName.charAt(0)
+        },
+        ...prevGroups
+      ];
+    });
+
+    setShowCreateGroupModal(false);
+  };
+
+  const handleOpenGroupProfileModal = (groupId) => {
+    const targetGroup = groups.find((group) => group.id === groupId);
+    if (!targetGroup) return;
+
+    setSelectedGroupId(groupId);
+    setGroupProfileName(targetGroup.name || '');
+    setGroupProfileDescription(targetGroup.description || '');
+    setOpenGroupActionMenuId(null);
+    setShowGroupProfileModal(true);
+  };
+
+  const handleConfirmGroupDescription = () => {
+    if (!selectedGroupId) return;
+
+    const trimmedName = groupProfileName.trim();
+
+    setGroups((previousGroups) =>
+      previousGroups.map((group) =>
+        group.id === selectedGroupId
+          ? {
+              ...group,
+              name: trimmedName || group.name,
+              avatar: (trimmedName || group.name).charAt(0),
+              description: groupProfileDescription.trim()
+            }
+          : group
+      )
+    );
+  };
+
+  const handleOpenEditMembersModal = (groupId) => {
+    const targetGroup = groups.find((group) => group.id === groupId);
+    if (!targetGroup) return;
+
+    setSelectedGroupId(groupId);
+    setSelectedMemberIds([...(targetGroup.members || [])]);
+    setEditMembersSearchQuery('');
+    setOpenGroupActionMenuId(null);
+    setShowEditMembersModal(true);
+  };
+
+  const handleToggleMemberSelection = (userId) => {
+    setSelectedMemberIds((previousSelectedMemberIds) => {
+      if (previousSelectedMemberIds.includes(userId)) {
+        return previousSelectedMemberIds.filter((memberId) => memberId !== userId);
+      }
+      return [...previousSelectedMemberIds, userId];
+    });
+  };
+
+  const handleSaveGroupMembers = () => {
+    if (!selectedGroupId) return;
+
+    setGroups((previousGroups) =>
+      previousGroups.map((group) =>
+        group.id === selectedGroupId
+          ? { ...group, members: selectedMemberIds, memberCount: selectedMemberIds.length }
+          : group
+      )
+    );
+
+    setShowEditMembersModal(false);
+  };
+
+  const handleDeleteGroup = (groupId) => {
+    setGroups((previousGroups) => previousGroups.filter((group) => group.id !== groupId));
+    setShowGroupProfileModal(false);
+    setShowEditMembersModal(false);
+    setOpenGroupActionMenuId(null);
+    setSelectedGroupId(null);
   };
 
   return (
@@ -355,12 +551,13 @@ function SupportPanel({ users, setUsers }) {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg overflow-x-auto">
+      <div className="bg-white rounded-lg overflow-visible">
+        <div className="overflow-visible">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-white border-b border-gray-200">
             <tr>
               <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">
-                <div className="flex items-center space-x-2 relative" ref={filterRef}>
+                <div className="flex items-center space-x-2 relative z-[130]" ref={filterRef}>
                   <span>บทบาท</span>
                   <button
                     onClick={() => setShowRoleFilter(!showRoleFilter)}
@@ -374,7 +571,7 @@ function SupportPanel({ users, setUsers }) {
                     </span>
                   )}
                   {showRoleFilter && (
-                    <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[100] w-48">
+                    <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[140] w-48">
                       <div className="p-3 space-y-2">
                         {roleOptions.map((option) => (
                           <label
@@ -528,6 +725,7 @@ function SupportPanel({ users, setUsers }) {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Pagination */}
@@ -581,18 +779,22 @@ function SupportPanel({ users, setUsers }) {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <button className="flex items-center space-x-2 bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-500 transition-colors font-medium">
+            <button
+              onClick={handleOpenCreateGroupModal}
+              className="flex items-center space-x-2 bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-500 transition-colors font-medium"
+            >
               <span>Create group</span>
               <HiPlus className="w-5 h-5" />
             </button>
           </div>
 
           {/* Groups Table */}
-          <div className="bg-white rounded-lg overflow-hidden">
+          <div className="bg-white rounded-lg overflow-visible">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">กลุ่ม</th>
+                  <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">คำอธิบาย</th>
                   <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">จำนวนผู้ใช้</th>
                   <th className="px-4 py-3"></th>
                 </tr>
@@ -610,18 +812,41 @@ function SupportPanel({ users, setUsers }) {
                           <span className="text-gray-900">{group.name}</span>
                         </div>
                       </td>
+                      <td className="px-4 py-4 text-gray-600">{group.description || '-'}</td>
                       <td className="px-4 py-4">
                         <div className="flex items-center space-x-2 text-gray-700">
                           <HiUserGroup className="w-5 h-5" />
-                          <span>{group.memberCount}</span>
+                          <span>{getGroupMemberCount(group)}</span>
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <button className="text-gray-600 hover:text-gray-900">
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                          </svg>
-                        </button>
+                        <div className="relative" ref={openGroupActionMenuId === group.id ? groupActionMenuRef : null}>
+                          <button
+                            onClick={() => setOpenGroupActionMenuId((previousId) => (previousId === group.id ? null : group.id))}
+                            className="text-gray-600 hover:text-gray-900"
+                          >
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                            </svg>
+                          </button>
+
+                          {openGroupActionMenuId === group.id && (
+                            <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-[120] overflow-hidden">
+                              <button
+                                onClick={() => handleOpenGroupProfileModal(group.id)}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              >
+                                โปรไฟล์กลุ่ม
+                              </button>
+                              <button
+                                onClick={() => handleOpenEditMembersModal(group.id)}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+                              >
+                                แก้ไขสมาชิก
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -771,6 +996,176 @@ function SupportPanel({ users, setUsers }) {
                 className="px-4 py-2 bg-yellow-400 text-gray-900 rounded-lg hover:bg-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ยืนยัน
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCreateGroupModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[130] px-4"
+          onClick={handleCloseCreateGroupModal}
+        >
+          <div
+            className="w-full max-w-2xl bg-gray-300 rounded-3xl p-8 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="space-y-5">
+              <div>
+                <label className="block text-lg font-medium text-gray-900 mb-2">ชื่อกลุ่ม</label>
+                <input
+                  type="text"
+                  value={newGroupName}
+                  onChange={(event) => setNewGroupName(event.target.value)}
+                  placeholder="ใส่ชื่อกลุ่ม"
+                  className="w-full rounded-full px-5 py-3 text-base text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-lg font-medium text-gray-900 mb-2">คำอธิบาย</label>
+                <textarea
+                  value={newGroupDescription}
+                  onChange={(event) => setNewGroupDescription(event.target.value)}
+                  placeholder="ใส่คำอธิบาย"
+                  rows={5}
+                  className="w-full rounded-3xl px-5 py-4 text-base text-gray-900 placeholder-gray-400 bg-white resize-none focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                />
+              </div>
+
+              <div className="flex items-center justify-center pt-2">
+                <button
+                  onClick={handleCreateGroup}
+                  disabled={!newGroupName.trim()}
+                  className="px-8 py-3 bg-yellow-400 text-gray-900 rounded-full hover:bg-yellow-500 transition-colors font-semibold text-base shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ยืนยันการสร้างกลุ่ม
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showGroupProfileModal && selectedGroup && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[135] px-4"
+          onClick={() => setShowGroupProfileModal(false)}
+        >
+          <div
+            className="w-full max-w-4xl bg-gray-100 rounded-3xl p-8 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 className="text-3xl font-normal text-gray-900 mb-6">โปรไฟล์กลุ่ม</h3>
+
+            <div className="mb-5 text-lg text-gray-900">
+              <span className="mr-4">ชื่อ</span>
+              <input
+                type="text"
+                value={groupProfileName}
+                onChange={(event) => setGroupProfileName(event.target.value)}
+                className="w-full mt-2 rounded-xl border border-gray-400 bg-transparent px-4 py-2 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                placeholder="ใส่ชื่อกลุ่ม"
+              />
+            </div>
+
+            <div className="mb-6">
+              <p className="text-lg text-gray-900 mb-2">คำอธิบาย</p>
+              <textarea
+                value={groupProfileDescription}
+                onChange={(event) => setGroupProfileDescription(event.target.value)}
+                rows={4}
+                className="w-full rounded-2xl border border-gray-400 bg-transparent p-4 text-base text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                placeholder="ใส่คำอธิบาย"
+              />
+              <div className="flex justify-end mt-2">
+                <button
+                  onClick={handleConfirmGroupDescription}
+                  className="px-4 py-1.5 bg-yellow-400 text-gray-900 rounded-lg hover:bg-yellow-500 transition-colors text-sm font-medium"
+                >
+                  บันทึก
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-7">
+              <p className="text-lg text-gray-900 mb-3">สมาชิก</p>
+              <div className="grid grid-cols-3 gap-y-4 gap-x-8">
+                {selectedGroupMembers.map((member) => (
+                  <div key={member.id} className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm ${member.avatarColor}`}>
+                      {member.avatar}
+                    </div>
+                    <span className="text-base text-gray-800 truncate">{member.username}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditMembersModal && selectedGroup && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[136] px-4"
+          onClick={() => setShowEditMembersModal(false)}
+        >
+          <div
+            className="w-full max-w-5xl bg-gray-100 rounded-3xl p-8 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 className="text-3xl font-semibold text-gray-900 mb-4">แก้ไขสมาชิก</h3>
+
+            <div className="text-lg font-medium text-gray-900 mb-2">Users</div>
+            <div className="relative mb-5 border-b border-gray-400 pb-2">
+              <HiSearch className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                value={editMembersSearchQuery}
+                onChange={(event) => setEditMembersSearchQuery(event.target.value)}
+                placeholder="Search Bots"
+                className="w-full pl-8 pr-2 text-base bg-transparent text-gray-700 placeholder-gray-400 focus:outline-none"
+              />
+            </div>
+
+            <div className="max-h-[420px] overflow-y-auto pr-2 space-y-3">
+              {orderedSelectableMembers.map((user) => {
+                const isSelected = selectedMemberIds.includes(user.id);
+
+                return (
+                  <label key={user.id} className="flex items-center justify-between px-2 cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleMemberSelection(user.id)}
+                        className="w-5 h-5 accent-black"
+                      />
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm ${user.avatarColor}`}>
+                        {user.avatar}
+                      </div>
+                      <span className="text-base text-gray-800">{user.username}</span>
+                    </div>
+
+                    {isSelected && (
+                      <span className="px-3 py-1 rounded-lg bg-lime-300 text-gray-900 text-sm font-medium">MEMBER</span>
+                    )}
+                  </label>
+                );
+              })}
+
+              {orderedSelectableMembers.length === 0 && (
+                <p className="text-base text-gray-500 px-2 py-4">ไม่มีผู้ใช้ที่เลือกได้</p>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-8">
+              <button
+                onClick={handleSaveGroupMembers}
+                className="px-10 py-2.5 rounded-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 text-base font-semibold transition-colors"
+              >
+                Save
               </button>
             </div>
           </div>
