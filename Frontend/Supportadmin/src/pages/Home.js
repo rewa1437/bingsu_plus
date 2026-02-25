@@ -1,121 +1,94 @@
-import { useState } from 'react';
-import { 
-  HiLightningBolt,
-  HiPencilAlt,
-  HiOutlinePaperAirplane
-} from 'react-icons/hi';
-import bingsuLogo from '../assets/images/หน่องบิงไม่มีพื้นละ.png';
-import { Dropdown } from '../components/Dropdown';
+import { useEffect, useRef, useState } from 'react';
+import { HiLightBulb, HiChevronDown, HiChevronRight } from 'react-icons/hi';
+import { Document, Page, pdfjs } from 'react-pdf';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 function Home() {
-  const [selectedBot, setSelectedBot] = useState(null);
-  const [chatInput, setChatInput] = useState('');
+  const viewerRef = useRef(null);
+  const [numPages, setNumPages] = useState(0);
+  const [pageWidth, setPageWidth] = useState(900);
+  const [isManualOpen, setIsManualOpen] = useState(false);
 
-  // Frontend only - no API calls
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    const trimmedInput = chatInput.trim();
-    if (trimmedInput) {
-      // Frontend only - just clear input
-      setChatInput('');
-      // Could navigate to chat page if needed
-      // navigate('/chat', { state: { message: trimmedInput } });
-    }
+  useEffect(() => {
+    const updatePageWidth = () => {
+      if (!viewerRef.current) return;
+      const width = viewerRef.current.clientWidth;
+      setPageWidth(Math.max(320, Math.min(width - 24, 1000)));
+    };
+
+    updatePageWidth();
+    window.addEventListener('resize', updatePageWidth);
+    return () => window.removeEventListener('resize', updatePageWidth);
+  }, []);
+
+  const onDocumentLoadSuccess = ({ numPages: totalPages }) => {
+    setNumPages(totalPages);
   };
 
-  const botOptions = [
-    { value: 'bot1', label: 'Bot 1' },
-    { value: 'bot2', label: 'Bot 2' },
-    { value: 'bot3', label: 'Bot 3' },
-  ];
-
   return (
-    <>
-      {/* Top Bar */}
-      <div className='flex justify-between items-center mb-8'>
-        <Dropdown
-          options={botOptions}
-          selectedValue={selectedBot}
-          onSelect={setSelectedBot}
-          placeholder="Select Bots"
-        />
-        <button className='text-gray-600 text-xl cursor-pointer hover:text-gray-800 transition'>
-          <HiPencilAlt />
+    <div className='w-full h-full bg-gray-50 p-4 md:p-6'>
+      <div className='mb-6 flex items-end justify-between gap-3'>
+        <div>
+          <h1 className='text-3xl font-bold text-gray-800 mb-2'>Manual</h1>
+          <p className='text-sm text-gray-600'>เอกสารคู่มือการใช้งานระบบ</p>
+        </div>
+        <a
+          href='/1.pdf'
+          target='_blank'
+          rel='noopener noreferrer'
+          className='px-4 py-2 rounded-lg bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors'
+        >
+          เปิดเอกสารในแท็บใหม่
+        </a>
+      </div>
+
+      <div className='bg-white border border-gray-200 rounded-2xl p-4 md:p-6 shadow-sm'>
+        <button
+          type='button'
+          onClick={() => setIsManualOpen((previousState) => !previousState)}
+          className='w-full flex items-center justify-between gap-3 mb-5 pb-4 border-b border-gray-100 text-left'
+        >
+          <div className='flex items-center gap-3'>
+            <div className='w-11 h-11 rounded-xl bg-yellow-100 flex items-center justify-center shrink-0'>
+              <HiLightBulb className='text-yellow-500 text-2xl' />
+            </div>
+            <div>
+              <h2 className='text-xl font-semibold text-gray-800 leading-tight'>คู่มือการใช้งาน</h2>
+              <p className='text-sm text-gray-500 mt-1'>ไฟล์เอกสาร PDF สำหรับอ้างอิงการใช้งานระบบ</p>
+            </div>
+          </div>
+          {isManualOpen ? (
+            <HiChevronDown className='text-gray-500 text-2xl shrink-0' />
+          ) : (
+            <HiChevronRight className='text-gray-500 text-2xl shrink-0' />
+          )}
         </button>
-      </div>
 
-      {/* Welcome Section - Centered */}
-      <div className='flex flex-col items-center justify-center flex-1'>
-        {/* Mascot */}
-        <div className='mb-6'>
-          <img src={bingsuLogo} alt="mascot" className='w-32 h-32 object-cover' />
-        </div>
-
-        {/* Title */}
-        <h1 className='text-2xl font-semibold text-gray-800 mb-4'>Welcome to BingSu LLM</h1>
-
-        {/* Description */}
-        <p className='text-gray-600 text-center max-w-2xl leading-relaxed mb-10'>
-          บิงซูบอท (Bingsu Bot) ผู้ช่วยอัจฉริยะดิจิทัล<br />
-          ที่พร้อมให้บริการข้อมูลและความช่วยเหลือ<br />
-          แก่ประชาชนด้วยความเป็นมิตร มีประสิทธิภาพ และโปร่งใส
-        </p>
-
-        {/* Chat Input */}
-        <div className='w-full max-w-4xl flex justify-center'>
-          <div className='flex items-center gap-2 border-4 border-yellow-400 rounded-3xl px-6 py-4 bg-white shadow-lg w-full'>
-            <textarea
-              value={chatInput}
-              onChange={(e) => {
-                setChatInput(e.target.value);
-                // Auto resize textarea with max height limit
-                const textarea = e.target;
-                textarea.style.height = 'auto';
-                const maxHeight = 128; // 8rem = 128px
-                textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
-              }}
-              onKeyDown={(e) => {
-                // Auto resize on key down with max height limit
-                const textarea = e.target;
-                textarea.style.height = 'auto';
-                const maxHeight = 128; // 8rem = 128px
-                textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
-                
-                // ส่งข้อความเมื่อกด Enter (ไม่ใช่ Shift+Enter)
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage(e);
-                }
-              }}
-              placeholder='How can I help today?...'
-              rows={1}
-              className='flex-1 outline-none text-gray-700 text-base placeholder-gray-400 bg-transparent resize-none overflow-hidden min-h-[1.5rem] max-h-32'
-            />
-            <button
-              type='button'
-              onClick={handleSendMessage}
-              className={`text-xl cursor-pointer transition ${chatInput.trim() ? 'text-gray-600 hover:scale-110 hover:text-gray-800' : 'text-gray-300 cursor-not-allowed'}`}
-              disabled={!chatInput.trim()}
+        {isManualOpen && (
+          <div ref={viewerRef} className='rounded-xl overflow-auto bg-gray-100 h-[74vh] p-3'>
+            <Document
+              file='/1.pdf'
+              onLoadSuccess={onDocumentLoadSuccess}
+              loading={<p className='text-sm text-gray-500 text-center py-6'>กำลังโหลดเอกสาร...</p>}
+              error={<p className='text-sm text-red-500 text-center py-6'>ไม่สามารถโหลดไฟล์ PDF ได้</p>}
             >
-              <HiOutlinePaperAirplane className='transform rotate-90' />
-            </button>
+              <div className='flex flex-col items-center gap-3'>
+                {Array.from(new Array(numPages), (_, index) => (
+                  <Page
+                    key={`manual-page-${index + 1}`}
+                    pageNumber={index + 1}
+                    width={pageWidth}
+                    renderTextLayer={false}
+                    renderAnnotationLayer={false}
+                  />
+                ))}
+              </div>
+            </Document>
           </div>
-        </div>
-
-        {/* Suggested */}
-        <div className='w-full max-w-2xl mt-8'>
-          <div className='text-gray-500 text-sm mb-4 flex items-center gap-2'>
-            <HiLightningBolt className='text-lg' />
-            <span>How To</span>
-          </div>
-          <div className='flex gap-4'>
-            <div className='flex-1 h-16 bg-gray-200 rounded-xl'></div>
-            <div className='flex-1 h-16 bg-gray-200 rounded-xl'></div>
-            <div className='flex-1 h-16 bg-gray-200 rounded-xl'></div>
-          </div>
-        </div>
+        )}
       </div>
-    </>
+    </div>
   );
 }
 

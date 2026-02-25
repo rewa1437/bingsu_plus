@@ -10,11 +10,18 @@ import {
   HiOutlineUser 
 } from 'react-icons/hi';
 import bingsuLogo from '../assets/images/หน่องบิงไม่มีพื้นละ.png';
+import ProfileModal from './ProfileModal';
+import AccountModal from './AccountModal';
 
 function Navbar({ onCollapseChange }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
+  const [profileName, setProfileName] = useState('Profile');
   const navigate = useNavigate();
   const location = useLocation();
+  const profileInitial = (profileName?.trim()?.charAt(0) || 'P').toUpperCase();
 
   const toggleSidebar = () => {
     const newState = !isCollapsed;
@@ -31,7 +38,16 @@ function Navbar({ onCollapseChange }) {
     return location.pathname === path;
   };
 
+  const handleManageAccount = () => {
+    setIsAccountModalOpen(true);
+  };
+
+  const handleSignOut = () => {
+    navigate('/login');
+  };
+
   return (
+    <>
     <aside className={`bg-gray-200 flex flex-col py-6 transition-all duration-500 ease-in-out relative ${
       isCollapsed ? 'w-0 px-0 overflow-hidden' : 'w-52 px-6 overflow-visible'
     }`}>
@@ -79,7 +95,7 @@ function Navbar({ onCollapseChange }) {
             className={`nav-item ${isActive('/homepage') ? 'nav-item-active' : 'nav-item-inactive'} hover:bg-gray-300 active:bg-gray-400 cursor-pointer rounded-lg transition-colors w-full py-1 px-2`}
           >
             <HiHome className='text-xl flex-shrink-0' />
-            {!isCollapsed && <span>Home</span>}
+            {!isCollapsed && <span>Manual</span>}
           </div>
           <div 
             onClick={() => navigate('/bots')}
@@ -110,13 +126,34 @@ function Navbar({ onCollapseChange }) {
         className={`flex items-center gap-3 pt-4 border-t border-gray-300 cursor-pointer hover:bg-gray-100 rounded-lg p-2 transition-all duration-300 ease-in-out ${
           isCollapsed ? 'opacity-0 overflow-hidden' : 'opacity-100'
         }`}
+        onClick={() => setIsProfileModalOpen(true)}
       >
-        <div className='w-10 h-10 bg-white rounded-full flex items-center justify-center flex-shrink-0'>
-          <HiOutlineUser className='text-gray-600 text-xl' />
+        <div className='w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0 text-xl'>
+          <span className='text-gray-700 font-medium'>{selectedAvatar || profileInitial}</span>
         </div>
         {!isCollapsed && <span className='text-gray-700 whitespace-nowrap'>Profile</span>}
       </div>
+
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        onManageAccount={handleManageAccount}
+        onSignOut={handleSignOut}
+        selectedAvatar={selectedAvatar}
+        profileInitial={profileInitial}
+      />
     </aside>
+
+    <AccountModal
+      isOpen={isAccountModalOpen}
+      onClose={() => setIsAccountModalOpen(false)}
+      selectedAvatar={selectedAvatar}
+      onAvatarChange={setSelectedAvatar}
+      profileName={profileName}
+      onProfileNameChange={setProfileName}
+      profileInitial={profileInitial}
+    />
+    </>
   );
 }
 
