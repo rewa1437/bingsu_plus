@@ -94,7 +94,7 @@ function Navbar({ onCollapseChange }) {
             className={`nav-item ${isActive('/homepage') ? 'nav-item-active' : 'nav-item-inactive'} hover:bg-gray-300 active:bg-gray-400 cursor-pointer rounded-lg transition-colors w-full py-1 px-2`}
           >
             <HiHome className='text-xl flex-shrink-0' />
-            {!isCollapsed && <span>Home</span>}
+            {!isCollapsed && <span>Manual</span>}
           </div>
           <div 
             onClick={() => navigate('/bots')}

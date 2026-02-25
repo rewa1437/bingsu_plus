@@ -6,7 +6,7 @@ import bingsuLogo from '../assets/images/หน่องบิงไม่มี
 
 function Login() {
   const navigate = useNavigate();
-  const [isSignIn, setIsSignIn] = useState(true);
+  const [isSignIn] = useState(true);
 
   // Form states for Sign In
   const [signInEmail, setSignInEmail] = useState('');

@@ -486,14 +486,6 @@ function SupportPanel({ users, setUsers }) {
     setShowEditMembersModal(false);
   };
 
-  const handleDeleteGroup = (groupId) => {
-    setGroups((previousGroups) => previousGroups.filter((group) => group.id !== groupId));
-    setShowGroupProfileModal(false);
-    setShowEditMembersModal(false);
-    setOpenGroupActionMenuId(null);
-    setSelectedGroupId(null);
-  };
-
   return (
     <div className="w-full px-8 py-8">
       {/* Header with Tabs */}
