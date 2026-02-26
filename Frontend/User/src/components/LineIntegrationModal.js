@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HiX, HiClipboardCopy } from 'react-icons/hi';
 import Dropdown from './Dropdown';
 import { showToast } from './ToastNotification';
+import { botAPI } from '../services/api';
 
 function LineIntegrationModal({ isOpen, onClose }) {
   const [mode, setMode] = useState('simple'); // 'simple' or 'advanced'
@@ -10,12 +11,37 @@ function LineIntegrationModal({ isOpen, onClose }) {
   const [channelAccessToken, setChannelAccessToken] = useState('');
   const [channelSecret, setChannelSecret] = useState('');
   const [lineWebhook, setLineWebhook] = useState('');
+  const [modelOptions, setModelOptions] = useState([]);
 
-  const modelOptions = [
-    { value: 'bot1', label: 'Bot 1' },
-    { value: 'bot2', label: 'Bot 2' },
-    { value: 'bot3', label: 'Bot 3' },
-  ];
+  // โหลด bots จาก API
+  useEffect(() => {
+    if (isOpen) {
+      const loadBots = async () => {
+        try {
+          const botsData = await botAPI.getBots();
+          console.log('Bots data from API (LineIntegration):', botsData);
+          
+          // Transform bots data to dropdown options format
+          if (Array.isArray(botsData)) {
+            const options = botsData
+              .filter(bot => bot && bot.id && bot.name)
+              .map(bot => ({
+                value: bot.id.toString(),
+                label: bot.name
+              }));
+            setModelOptions(options);
+          } else {
+            setModelOptions([]);
+          }
+        } catch (error) {
+          console.error('Error loading bots:', error);
+          setModelOptions([]);
+        }
+      };
+
+      loadBots();
+    }
+  }, [isOpen]);
 
   const totalSteps = 4;
 

@@ -331,11 +331,15 @@ export const chatAPI = {
     },
 
     // Create a new chat
-    createChat: async (name, user_ids = []) => {
-        const response = await api.post('/chats', {
+    createChat: async (name, user_ids = [], botId = null) => {
+        const payload = {
             name: name || null,
             user_ids: user_ids
-        });
+        };
+        if (botId) {
+            payload.botId = botId;
+        }
+        const response = await api.post('/chats', payload);
         return response.data;
     },
 
@@ -424,14 +428,19 @@ export const chatMessageAPI = {
     },
 
     // Create bot response
-    createBotResponse: async (chatId, message) => {
+    createBotResponse: async (chatId, message, documentIds = null) => {
         const chatIdInt = typeof chatId === 'string' ? parseInt(chatId, 10) : chatId;
         if (isNaN(chatIdInt)) {
             throw new Error('Invalid chat ID');
         }
-        const response = await api.post(`/chats/${chatIdInt}/messages/bot-response`, {
+        const payload = {
             message: message
-        });
+        };
+        // Add document_ids if provided
+        if (documentIds && Array.isArray(documentIds) && documentIds.length > 0) {
+            payload.document_ids = documentIds.map(id => typeof id === 'number' ? id.toString() : id);
+        }
+        const response = await api.post(`/chats/${chatIdInt}/messages/bot-response`, payload);
         return response.data;
     },
 };

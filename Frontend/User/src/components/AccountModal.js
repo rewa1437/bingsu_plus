@@ -44,18 +44,9 @@ function AccountModal({ isOpen, onClose }) {
       setProfileImage(userData.profileImage);
       setOriginalData(userData);
 
-      // Update localStorage with latest data
+      // Only store minimal data (id) in localStorage — no PII
       try {
-        const userDataForStorage = {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          fullName: fullName,
-          name: fullName,
-          emailVerified: user.emailVerified,
-        };
-        localStorage.setItem('user', JSON.stringify(userDataForStorage));
+        localStorage.setItem('user', JSON.stringify({ id: user.id }));
       } catch (storageError) {
         console.error('Error updating localStorage:', storageError);
       }
@@ -64,24 +55,7 @@ function AccountModal({ isOpen, onClose }) {
       const errorMessage = getErrorMessage(error) || 'ไม่สามารถโหลดข้อมูลผู้ใช้ได้';
       setError(errorMessage);
       
-      // Fallback to localStorage if API fails
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-          const user = JSON.parse(storedUser);
-          const userData = {
-            name: user.fullName || user.name || '',
-            email: user.email || '',
-            profileImage: user.profileImage || bingsuLogo,
-          };
-          setName(userData.name);
-          setEmail(userData.email);
-          setProfileImage(userData.profileImage);
-          setOriginalData(userData);
-        } catch (parseError) {
-          console.error('Error parsing stored user data:', parseError);
-        }
-      }
+      // No localStorage fallback — PII is no longer stored there
     } finally {
       setIsLoading(false);
     }
@@ -158,22 +132,7 @@ function AccountModal({ isOpen, onClose }) {
       setName(fullName);
       setEmail(updatedUser.email || email);
       
-      // Update localStorage for backward compatibility
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-        const user = JSON.parse(storedUser);
-          user.fullName = fullName;
-          user.name = fullName;
-          user.firstName = updatedUser.firstName;
-          user.lastName = updatedUser.lastName;
-          user.email = updatedUser.email || email;
-        user.profileImage = profileImage;
-        localStorage.setItem('user', JSON.stringify(user));
-        } catch (e) {
-          console.error('Error updating localStorage:', e);
-        }
-      }
+      // localStorage stores only { id } — no PII to update
       
       // Show success message
       setSuccess('บันทึกข้อมูลเรียบร้อยแล้ว');

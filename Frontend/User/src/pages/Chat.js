@@ -11,8 +11,9 @@ import {
   HiX
 } from 'react-icons/hi';
 import { HiChatBubbleLeftRight } from 'react-icons/hi2';
+import { HiChevronDown } from 'react-icons/hi';
 import bingsuLogo from '../assets/images/หน่องบิงไม่มีพื้นละ.png';
-import { chatMessageAPI, chatAPI } from '../services/api';
+import { chatMessageAPI, chatAPI, botAPI } from '../services/api';
 
 function Chat() {
   const { chatId } = useParams();
@@ -29,8 +30,15 @@ function Chat() {
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const timeoutRefs = useRef({});
+  
+  // Bot states
+  const [bots, setBots] = useState([]);
+  const [loadingBots, setLoadingBots] = useState(false);
+  const [isBotsDropdownOpen, setIsBotsDropdownOpen] = useState(false);
+  const botsDropdownRef = useRef(null);
+  const [selectedBot, setSelectedBot] = useState(null);
 
-  // ดึงชื่อ chat จาก API
+  // ดึงชื่อ chat และ bot จาก API
   useEffect(() => {
     const loadChatName = async () => {
       try {
@@ -39,6 +47,17 @@ function Chat() {
           setChatName(chat.name);
         } else {
           setChatName('New Chat');
+        }
+        
+        // ถ้า chat มี botId ให้โหลด bot จาก botId (priority สูงกว่า location.state)
+        if (chat && chat.botId && bots.length > 0) {
+          const bot = bots.find(b => b.id === chat.botId);
+          if (bot) {
+            console.log('Found bot from chat.botId:', bot.name, 'with documentIds:', bot.documentIds);
+            setSelectedBot(bot);
+          } else {
+            console.warn('Bot from chat.botId not found in bots list:', chat.botId);
+          }
         }
       } catch (error) {
         console.error('Error loading chat name:', error);
@@ -57,7 +76,72 @@ function Chat() {
     return () => {
       window.removeEventListener('chatsUpdated', handleChatUpdate);
     };
-  }, [chatId]);
+  }, [chatId, bots]);
+
+  // โหลด bots จาก API
+  useEffect(() => {
+    const loadBots = async () => {
+      setLoadingBots(true);
+      try {
+        const botsData = await botAPI.getBots();
+        console.log('Bots data from API:', botsData);
+        
+        // Ensure we have an array and filter out any invalid data
+        if (Array.isArray(botsData)) {
+          // Filter to only show valid bots with required fields
+          // Also extract documentIds from documents array if needed
+          const validBots = botsData
+            .filter(bot => 
+              bot && 
+              bot.id && 
+              bot.name && 
+              typeof bot.name === 'string'
+            )
+            .map(bot => {
+              // Extract documentIds from documents array if documentIds is not present
+              let documentIds = bot.documentIds;
+              if (!documentIds && bot.documents && Array.isArray(bot.documents)) {
+                documentIds = bot.documents.map(doc => doc.id || doc);
+              }
+              return {
+                ...bot,
+                documentIds: documentIds || []
+              };
+            });
+          // Store all bots (including inactive) for checking selectedBot status
+          setBots(validBots);
+          console.log('Loaded bots:', validBots.length, 'bots (enabled:', validBots.filter(b => b.enabled !== false).length, ')');
+        } else {
+          console.warn('Bots data is not an array:', botsData);
+          setBots([]);
+        }
+      } catch (error) {
+        console.error('Error loading bots:', error);
+        setBots([]);
+      } finally {
+        setLoadingBots(false);
+      }
+    };
+
+    loadBots();
+  }, []);
+
+  // Close bots dropdown when clicking outside
+  useEffect(() => {
+    if (!isBotsDropdownOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (botsDropdownRef.current && !botsDropdownRef.current.contains(event.target)) {
+        setIsBotsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isBotsDropdownOpen]);
   
   const [messages, setMessages] = useState([]);
   const [hasInitialized, setHasInitialized] = useState(false);
@@ -162,6 +246,44 @@ function Chat() {
     }
   }, [chatId]);
 
+  // โหลด bot ที่เลือกจาก location.state (สำหรับแชทใหม่) หรือจาก chat.botId (สำหรับแชทเก่า)
+  // Priority: chat.botId > location.state
+  useEffect(() => {
+    // ถ้ามี selectedBot แล้ว (จาก chat.botId) ไม่ต้องโหลดจาก location.state
+    if (selectedBot) {
+      return;
+    }
+    
+    const botFromState = location.state?.selectedBot;
+    if (botFromState && bots.length > 0) {
+      // หา bot object จาก bots list โดยใช้ id
+      const botId = typeof botFromState === 'object' ? botFromState.id : botFromState;
+      const bot = bots.find(b => 
+        b.id.toString() === botId.toString() || 
+        b.id === botId ||
+        (typeof botFromState === 'object' && b.id === botFromState.id)
+      );
+      
+      if (bot) {
+        // ตรวจสอบว่า bot ยัง active อยู่หรือไม่
+        if (bot.enabled !== false) {
+          console.log('Found bot from location.state:', bot.name, 'with documentIds:', bot.documentIds, '(enabled)');
+          setSelectedBot(bot);
+        } else {
+          console.warn('Bot from state is inactive:', bot.name);
+          // Bot inactive - เก็บไว้เพื่อแสดงข้อความเตือน แต่ไม่ให้ส่งข้อความ
+          setSelectedBot(bot);
+        }
+      } else {
+        console.warn('Bot from state not found in bots list:', botId);
+      }
+    } else if (botFromState && bots.length === 0) {
+      // ถ้ายังไม่มี bots list ให้เก็บไว้ชั่วคราว
+      console.log('Bots list not loaded yet, storing bot from state temporarily');
+      setSelectedBot(botFromState);
+    }
+  }, [location.state, bots, selectedBot]);
+
   // จัดการ firstMessage จาก homepage และโหลด messages
   useEffect(() => {
     // ป้องกันการทำงานซ้ำ (React StrictMode)
@@ -190,6 +312,12 @@ function Chat() {
           return;
         }
         
+        // ตรวจสอบว่า bot ที่ใช้ในแชทนี้ยัง active อยู่หรือไม่
+        if (selectedBot && selectedBot.enabled === false) {
+          alert('Bot นี้ถูก inactive แล้ว กรุณาไปเปิด Bot เป็น active ในหน้า Bots ก่อนส่งข้อความ');
+          return;
+        }
+        
         setIsTyping(true);
         try {
           // ส่งข้อความแรก
@@ -198,10 +326,11 @@ function Chat() {
           // โหลด messages ใหม่จาก API
           await loadMessages();
           
-          // สร้าง bot response (จะใช้เวลา 3 วินาที)
+          // สร้าง bot response โดยส่งข้อความจริงไปให้ backend เพื่อใช้ RAG
+          // Backend จะใช้ documentIds จาก chat.botId อัตโนมัติ
           try {
-            const botResponseText = `ฉันได้รับข้อความของคุณแล้ว: "${firstMessage}"\n\nโปรดรอการอัพเดทระบบ AI เพื่อให้ได้คำตอบที่สมบูรณ์`;
-            await chatMessageAPI.createBotResponse(chatIdInt, botResponseText);
+            // ไม่ต้องส่ง documentIds เพราะ backend จะใช้จาก chat.botId
+            await chatMessageAPI.createBotResponse(chatIdInt, firstMessage);
             
             // โหลด messages ใหม่จาก API (จะรวม bot response ด้วย)
             await loadMessages();
@@ -306,12 +435,11 @@ function Chat() {
       // โหลด messages ใหม่จาก API (จะรวมข้อความที่เพิ่งส่งไปด้วย)
       await loadMessages();
       
-      // สร้าง bot response
+      // สร้าง bot response โดยส่งข้อความจริงไปให้ backend เพื่อใช้ RAG
+      // Backend จะใช้ documentIds จาก chat.botId อัตโนมัติ
       try {
-        // สร้างข้อความตอบกลับจาก bot (ตอนนี้เป็น placeholder)
-        // TODO: เรียกใช้ AI service เพื่อสร้าง bot response ที่แท้จริง
-        const botResponseText = `ฉันได้รับข้อความของคุณแล้ว: "${messageText}"\n\nโปรดรอการอัพเดทระบบ AI เพื่อให้ได้คำตอบที่สมบูรณ์`;
-        await chatMessageAPI.createBotResponse(chatIdInt, botResponseText);
+        // ไม่ต้องส่ง documentIds เพราะ backend จะใช้จาก chat.botId
+        await chatMessageAPI.createBotResponse(chatIdInt, messageText);
         
         // โหลด messages ใหม่จาก API (จะรวม bot response ด้วย)
         await loadMessages();
@@ -435,9 +563,158 @@ function Chat() {
               <h1 className='text-base font-medium text-gray-800'>{chatName}</h1>
             </div>
           </div>
+          <div className='flex items-center gap-2'>
+            {/* Bots Display - Read Only (ไม่สามารถเปลี่ยนได้) */}
+            <div className='relative' ref={botsDropdownRef}>
+              <div className='flex items-center gap-2'>
+                <button
+                  onClick={() => setIsBotsDropdownOpen(!isBotsDropdownOpen)}
+                  className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-all ${
+                    selectedBot && selectedBot.enabled === false
+                      ? 'border-red-300 bg-red-50 text-red-700 cursor-not-allowed'
+                      : 'border-gray-200 bg-gray-50 text-gray-700 cursor-pointer hover:bg-gray-100'
+                  }`}
+                  disabled={!selectedBot}
+                >
+                  <span className={selectedBot && selectedBot.enabled === false ? 'text-red-700' : 'text-gray-600'}>
+                    {selectedBot ? (
+                      <>
+                        <span className='font-medium'>{typeof selectedBot === 'object' ? selectedBot.name : selectedBot}</span>
+                        {selectedBot.enabled === false ? (
+                          <span className='text-xs text-red-600 ml-2 font-semibold'>(Inactive - ไม่สามารถส่งข้อความได้)</span>
+                        ) : (
+                          <span className='text-xs text-gray-500 ml-2'>(ไม่สามารถเปลี่ยนได้)</span>
+                        )}
+                      </>
+                    ) : (
+                      `ยังไม่ได้เลือก Bot`
+                    )}
+                  </span>
+                  {selectedBot && (
+                    <HiChevronDown className={`text-gray-500 transition-transform ${isBotsDropdownOpen ? 'rotate-180' : ''}`} />
+                  )}
+                </button>
+                {selectedBot && selectedBot.enabled === false && (
+                  <button
+                    onClick={() => navigate('/bots')}
+                    className='px-3 py-2 text-xs bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all'
+                  >
+                    ไปเปิด Bot
+                  </button>
+                )}
+              </div>
+              
+              {/* Show bot info dropdown (read-only) */}
+              {selectedBot && isBotsDropdownOpen && (
+                <div className='absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[280px] max-w-[400px] max-h-[400px] overflow-y-auto'>
+                  <div className='px-4 py-3 border-b border-gray-200 bg-gray-50'>
+                    <h3 className='text-sm font-semibold text-gray-800'>Available Bots</h3>
+                  </div>
+                  {loadingBots ? (
+                    <div className='px-4 py-8 text-center'>
+                      <p className='text-sm text-gray-500'>Loading bots...</p>
+                    </div>
+                  ) : bots.length > 0 ? (
+                    <div className='py-2'>
+                      {bots.map((bot) => {
+                        const isSelected = selectedBot && (
+                          (typeof selectedBot === 'object' && selectedBot.id === bot.id) ||
+                          selectedBot === bot.id ||
+                          selectedBot.toString() === bot.id.toString()
+                        );
+                        const isInactive = bot.enabled === false;
+                        return (
+                        <div
+                          key={bot.id}
+                          className={`w-full text-left px-4 py-3 transition-colors border-b border-gray-100 last:border-b-0 ${
+                            isSelected 
+                              ? isInactive 
+                                ? 'bg-red-50 border-red-200' 
+                                : 'bg-yellow-50' 
+                              : isInactive
+                                ? 'bg-gray-50 opacity-60'
+                                : 'bg-white'
+                          }`}
+                        >
+                          <div className='flex items-start gap-3'>
+                            <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${
+                              bot.enabled 
+                                ? 'from-yellow-400 to-orange-400' 
+                                : 'from-gray-300 to-gray-400'
+                            } flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ${
+                              !bot.enabled ? 'grayscale opacity-50' : ''
+                            }`}>
+                              {bot.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className='flex-1 min-w-0'>
+                              <div className='flex items-center gap-2 mb-1'>
+                                <h4 className='text-sm font-semibold text-gray-800 truncate'>{bot.name}</h4>
+                                <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
+                                  bot.enabled 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-gray-200 text-gray-500'
+                                }`}>
+                                  {bot.enabled ? 'Active' : 'Inactive'}
+                                </span>
+                                {selectedBot?.id === bot.id && (
+                                  <span className='px-2 py-0.5 text-xs rounded-full font-medium bg-yellow-400 text-yellow-900'>
+                                    Selected
+                                  </span>
+                                )}
+                              </div>
+                              {bot.description && (
+                                <p className='text-xs text-gray-600 line-clamp-2 mb-1'>{bot.description}</p>
+                              )}
+                              {bot.model && (
+                                <p className='text-xs text-gray-500'>Model: {bot.model}</p>
+                              )}
+                              {bot.documentIds && bot.documentIds.length > 0 && (
+                                <p className='text-xs text-blue-600 mt-1'>
+                                  {bot.documentIds.length} knowledge base(s)
+                                </p>
+                              )}
+                              {isSelected && isInactive && (
+                                <p className='text-xs text-red-700 font-medium mt-1'>
+                                  ⚠️ Bot นี้ถูก inactive แล้ว - ไม่สามารถส่งข้อความได้
+                                </p>
+                              )}
+                              {isSelected && !isInactive && (
+                                <p className='text-xs text-yellow-700 font-medium mt-1'>
+                                  ✓ Bot ที่ใช้ในแชทนี้
+                                </p>
+                              )}
+                              {!isSelected && isInactive && (
+                                <p className='text-xs text-gray-500 mt-1'>
+                                  (Inactive - ไม่แสดงใน dropdown)
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className='px-4 py-8 text-center'>
+                      <p className='text-sm text-gray-500 mb-2'>No bots available</p>
+                      <button
+                        onClick={() => {
+                          setIsBotsDropdownOpen(false);
+                          navigate('/bots');
+                        }}
+                        className='text-xs text-yellow-600 hover:text-yellow-700 font-medium'
+                      >
+                        Create a bot
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+          </div>
           <button className='text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg p-2 transition-all'>
             <HiRefresh className='text-xl' />
           </button>
+          </div>
         </div>
 
         {/* Messages Area - Centered like ChatGPT/Gemini */}
@@ -627,8 +904,30 @@ function Chat() {
         {/* Chat Input - ChatGPT/Gemini style */}
         <div className='border-t border-gray-200 bg-white'>
           <div className='max-w-3xl mx-auto px-4 sm:px-6 py-4'>
+            {/* Warning message if bot is inactive */}
+            {selectedBot && selectedBot.enabled === false && (
+              <div className='mb-4 p-3 bg-red-50 border-2 border-red-200 rounded-lg'>
+                <div className='flex items-start gap-2'>
+                  <span className='text-red-600 font-bold text-lg'>⚠️</span>
+                  <div className='flex-1'>
+                    <p className='text-red-800 text-sm font-semibold mb-1'>Bot นี้ถูก inactive แล้ว</p>
+                    <p className='text-red-700 text-xs mb-2'>คุณไม่สามารถส่งข้อความได้จนกว่าจะไปเปิด Bot เป็น active ในหน้า Bots</p>
+                    <button
+                      onClick={() => navigate('/bots')}
+                      className='px-3 py-1.5 text-xs bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-semibold rounded-lg shadow-sm hover:shadow-md transition-all'
+                    >
+                      ไปเปิด Bot เป็น Active
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             <form onSubmit={handleSendMessage} className='relative'>
-              <div className='flex items-end gap-2 bg-white border-2 border-gray-300 rounded-2xl shadow-sm hover:border-yellow-400 focus-within:border-yellow-400 transition-colors'>
+              <div className={`flex items-end gap-2 bg-white border-2 rounded-2xl shadow-sm transition-colors ${
+                selectedBot && selectedBot.enabled === false
+                  ? 'border-red-300 bg-red-50'
+                  : 'border-gray-300 hover:border-yellow-400 focus-within:border-yellow-400'
+              }`}>
                 <textarea
                   ref={textareaRef}
                   value={chatInput}
@@ -644,17 +943,22 @@ function Chat() {
                       adjustTextareaHeight();
                     }
                   }}
-                  placeholder='พิมพ์ข้อความ...'
+                  placeholder={selectedBot && selectedBot.enabled === false ? 'Bot นี้ถูก inactive แล้ว...' : 'พิมพ์ข้อความ...'}
                   rows={1}
-                  className='flex-1 outline-none text-gray-700 text-[15px] placeholder-gray-400 bg-transparent resize-none overflow-hidden min-h-[52px] max-h-[200px] px-4 py-3.5'
+                  disabled={selectedBot && selectedBot.enabled === false}
+                  className={`flex-1 outline-none text-[15px] placeholder-gray-400 bg-transparent resize-none overflow-hidden min-h-[52px] max-h-[200px] px-4 py-3.5 ${
+                    selectedBot && selectedBot.enabled === false
+                      ? 'text-gray-400 cursor-not-allowed'
+                      : 'text-gray-700'
+                  }`}
                 />
                 
                 <div className='pr-2 pb-2 flex items-center justify-center'>
                   <button
                     type='submit'
-                    disabled={!chatInput.trim()}
+                    disabled={!chatInput.trim() || (selectedBot && selectedBot.enabled === false)}
                     className={`rounded-lg p-2.5 transition-all flex items-center justify-center ${
-                      chatInput.trim()
+                      chatInput.trim() && (!selectedBot || selectedBot.enabled !== false)
                         ? 'bg-gradient-to-br from-yellow-400 to-yellow-500 text-gray-900 hover:from-yellow-500 hover:to-yellow-600 shadow-sm hover:shadow-md'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}

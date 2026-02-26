@@ -13,25 +13,49 @@ function CreateBot() {
   const [error, setError] = useState(null);
   
   // รับ bot จาก state (เมื่อแก้ไข)
-  const botToEdit = location.state?.bot || null;
-  const isEditMode = !!botToEdit;
+  const botFromState = location.state?.bot || null;
+  const [botToEdit, setBotToEdit] = useState(botFromState);
+  const isEditMode = !!botFromState;
   
-  const [botName, setBotName] = useState(botToEdit?.name || '');
-  const [modelId, setModelId] = useState(botToEdit?.model || botToEdit?.modelId || '');
-  const [description, setDescription] = useState(botToEdit?.description || '');
-  const [systemPrompt, setSystemPrompt] = useState(botToEdit?.prompt || botToEdit?.systemPrompt || '');
-  const [avatarUrl, setAvatarUrl] = useState(botToEdit?.avatarUrl || '');
+  const [botName, setBotName] = useState(botFromState?.name || '');
+  const [description, setDescription] = useState(botFromState?.description || '');
+  const [systemPrompt, setSystemPrompt] = useState(botFromState?.prompt || botFromState?.systemPrompt || '');
+  const [avatarUrl, setAvatarUrl] = useState(botFromState?.avatarUrl || '');
   // enabled state is not used in UI but kept for future use
-  const [enabled] = useState(botToEdit?.enabled !== undefined ? botToEdit.enabled : true);
+  const [enabled] = useState(botFromState?.enabled !== undefined ? botFromState.enabled : true);
+
+  // Load full bot details when editing (to get documentIds)
+  useEffect(() => {
+    if (isEditMode && botFromState?.id) {
+      const loadBotDetails = async () => {
+        try {
+          const fullBot = await botAPI.getBot(botFromState.id);
+          setBotToEdit(fullBot);
+          // Update form fields with full bot data
+          setBotName(fullBot.name || '');
+          // All bots use MATCHA AI
+          setSelectedBaseModel('MATCHA AI');
+          setDescription(fullBot.description || '');
+          setSystemPrompt(fullBot.prompt || fullBot.systemPrompt || '');
+          setAvatarUrl(fullBot.avatarUrl || '');
+        } catch (err) {
+          console.error('Error loading bot details:', err);
+          // Continue with state bot if API fails
+        }
+      };
+      loadBotDetails();
+    } else if (!isEditMode) {
+      // For new bots, set default to MATCHA AI
+      setSelectedBaseModel('MATCHA AI');
+    }
+  }, [isEditMode, botFromState?.id]);
 
   const baseModelOptions = [
-    { value: 'Model1', label: 'Model 1' },
-    { value: 'Model2', label: 'Model 2' },
-    { value: 'Model3', label: 'Model 3' },
+    { value: 'MATCHA AI', label: 'MATCHA AI' },
   ];
 
-  // Set default value to first option
-  const [selectedBaseModel, setSelectedBaseModel] = useState(baseModelOptions[0]?.value || null);
+  // Set default value to MATCHA AI
+  const [selectedBaseModel, setSelectedBaseModel] = useState('MATCHA AI');
 
   // Knowledge states
   const [selectedKnowledge, setSelectedKnowledge] = useState([]);
@@ -55,6 +79,37 @@ function CreateBot() {
   useEffect(() => {
     loadKnowledge();
   }, []);
+
+  // Track if we've initialized selected knowledge to avoid overwriting user changes
+  const hasInitializedKnowledge = useRef(false);
+
+  // Load selected knowledge when editing a bot (after knowledge list is loaded)
+  useEffect(() => {
+    if (isEditMode && botToEdit && knowledgeList.length > 0 && !hasInitializedKnowledge.current) {
+      // Check if bot has documentIds or documents array
+      const documentIds = botToEdit.documentIds || (botToEdit.documents ? botToEdit.documents.map(d => d.id || d) : []);
+      
+      if (documentIds && documentIds.length > 0) {
+        // Map documentIds to knowledge objects from the loaded knowledge list
+        const selected = documentIds
+          .map(docId => {
+            // Handle both number and string IDs
+            const id = typeof docId === 'object' ? docId.id : docId;
+            return knowledgeList.find(k => k.id === id || k.id === parseInt(id));
+          })
+          .filter(k => k !== undefined); // Filter out any undefined (in case document was deleted)
+        
+        if (selected.length > 0) {
+          setSelectedKnowledge(selected);
+          hasInitializedKnowledge.current = true;
+        }
+      } else {
+        // Bot has no documentIds, ensure selectedKnowledge is empty
+        setSelectedKnowledge([]);
+        hasInitializedKnowledge.current = true;
+      }
+    }
+  }, [isEditMode, botToEdit, knowledgeList]);
 
   const loadKnowledge = async () => {
     setLoadingKnowledge(true);
@@ -203,11 +258,12 @@ function CreateBot() {
         .map(k => k.id)
         .filter(id => id != null && id !== undefined);
 
+      // Always use MATCHA AI as the model
       const botData = {
         name: botName.trim(),
         prompt: systemPrompt.trim(),
         description: description.trim() || null,
-        model: modelId.trim() || null,
+        model: 'MATCHA AI', // All bots use MATCHA AI
         avatarUrl: avatarUrl.trim() || null,
         enabled: enabled,
         documentIds: documentIds.length > 0 ? documentIds : []
@@ -311,13 +367,7 @@ function CreateBot() {
                   />
                 </div>
                 <div className='mb-4'>
-                  <input
-                    type='text'
-                    value={modelId}
-                    onChange={(e) => setModelId(e.target.value)}
-                    placeholder='รหัสโมเดล'
-                    className='text-sm text-gray-600 border-none outline-none bg-transparent w-full placeholder-gray-400'
-                  />
+                  <span className='text-sm text-gray-600'>MATCHA AI</span>
                 </div>
               </div>
             </div>
@@ -326,13 +376,13 @@ function CreateBot() {
           {/* Base Model Section */}
           <div className='mb-8'>
             <label className='block text-sm font-medium text-gray-700 mb-3'>
-              Select Models
+              AI Model
             </label>
             <Dropdown
               options={baseModelOptions}
               selectedValue={selectedBaseModel}
               onSelect={setSelectedBaseModel}
-              placeholder="Select Bots"
+              placeholder="Select AI Model"
             />
           </div>
 

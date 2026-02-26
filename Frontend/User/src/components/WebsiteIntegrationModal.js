@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HiX, HiInformationCircle, HiClipboardCopy } from 'react-icons/hi';
 import { HiChatBubbleLeftRight } from 'react-icons/hi2';
 import Dropdown from './Dropdown';
 import { showToast } from './ToastNotification';
+import { botAPI } from '../services/api';
 
 function WebsiteIntegrationModal({ isOpen, onClose }) {
   const [widgetImageUrl, setWidgetImageUrl] = useState('https://storage.googleapis.com/ai-api/AI%20API%20Image/chatbot_chindax.png');
@@ -10,12 +11,37 @@ function WebsiteIntegrationModal({ isOpen, onClose }) {
   const [selectedModel, setSelectedModel] = useState(null);
   const [welcomeText, setWelcomeText] = useState('');
   const [ownerId] = useState('c01bd8dd-9163-45d2-b843-c3e77ef93627');
+  const [modelOptions, setModelOptions] = useState([]);
 
-  const modelOptions = [
-    { value: 'Bot 1', label: 'Bot 1' },
-    { value: 'Bot 2', label: 'Bot 2' },
-    { value: 'Bot 3', label: 'Bot 3' },
-  ];
+  // โหลด bots จาก API
+  useEffect(() => {
+    if (isOpen) {
+      const loadBots = async () => {
+        try {
+          const botsData = await botAPI.getBots();
+          console.log('Bots data from API (WebsiteIntegration):', botsData);
+          
+          // Transform bots data to dropdown options format
+          if (Array.isArray(botsData)) {
+            const options = botsData
+              .filter(bot => bot && bot.id && bot.name)
+              .map(bot => ({
+                value: bot.id.toString(),
+                label: bot.name
+              }));
+            setModelOptions(options);
+          } else {
+            setModelOptions([]);
+          }
+        } catch (error) {
+          console.error('Error loading bots:', error);
+          setModelOptions([]);
+        }
+      };
+
+      loadBots();
+    }
+  }, [isOpen]);
 
   const widgetScript = `<script>
   (function() {

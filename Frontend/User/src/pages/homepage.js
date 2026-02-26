@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   HiLightningBolt,
@@ -8,16 +8,25 @@ import {
 import bingsuLogo from '../assets/images/หน่องบิงไม่มีพื้นละ.png';
 import Sidebar from '../components/Sidebar';
 import Dropdown from '../components/Dropdown';
-import { chatAPI } from '../services/api';
+import { chatAPI, botAPI } from '../services/api';
 
 function Homepage() {
   const navigate = useNavigate();
-  const [selectedBot, setSelectedBot] = useState(null);
+  const [selectedBot, setSelectedBot] = useState(null); // This is the dropdown value (string)
+  const [selectedBotObject, setSelectedBotObject] = useState(null); // This is the full bot object
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [chatInput, setChatInput] = useState('');
+  const [botOptions, setBotOptions] = useState([]);
+  const [botsList, setBotsList] = useState([]); // Store full bots list
 
   // ฟังก์ชันสำหรับสร้างแชทใหม่
   const createNewChat = async (firstMessage) => {
+    // ตรวจสอบว่ามี bot ที่เลือกหรือไม่
+    if (!selectedBot || !selectedBotObject) {
+      alert('กรุณาเลือก Bot ก่อนเริ่มแชท');
+      return;
+    }
+
     try {
       // Sanitize ชื่อแชท - ลบ special characters และจำกัดความยาว
       let chatName = null; // null = auto-generate name
@@ -36,14 +45,19 @@ function Homepage() {
         }
       }
       
-      // สร้างแชทใหม่ผ่าน API
-      const newChat = await chatAPI.createChat(chatName, []);
+      // สร้างแชทใหม่ผ่าน API พร้อม botId
+      const newChat = await chatAPI.createChat(chatName, [], selectedBotObject.id);
       
       // ส่ง custom event เพื่อให้ Sidebar อัพเดท
       window.dispatchEvent(new CustomEvent('chatsUpdated'));
       
-      // Navigate ไปที่แชทใหม่ทันที (ให้ Chat.js จัดการส่งข้อความและ bot response)
-      navigate(`/chat/${newChat.id}`, { state: { firstMessage: firstMessage?.trim() } });
+      // Navigate ไปที่แชทใหม่ทันที พร้อมส่ง bot object ที่เลือกไปด้วย (มี documentIds)
+      navigate(`/chat/${newChat.id}`, { 
+        state: { 
+          firstMessage: firstMessage?.trim(),
+          selectedBot: selectedBotObject // ส่ง bot object ที่มี documentIds ไปด้วย
+        } 
+      });
     } catch (error) {
       console.error('Error creating chat:', error);
       alert('ไม่สามารถสร้างแชทใหม่ได้ กรุณาลองอีกครั้ง');
@@ -62,12 +76,76 @@ function Homepage() {
     }
   };
 
+  // โหลด bots จาก API
+  useEffect(() => {
+    const loadBots = async () => {
+      try {
+        const botsData = await botAPI.getBots();
+        
+        // Transform bots data to dropdown options format
+        if (Array.isArray(botsData)) {
+          // Extract documentIds from documents array if needed
+          const processedBots = botsData
+            .filter(bot => bot && bot.id && bot.name)
+            .map(bot => {
+              // Extract documentIds from documents array if documentIds is not present
+              let documentIds = bot.documentIds;
+              if (!documentIds && bot.documents && Array.isArray(bot.documents)) {
+                documentIds = bot.documents.map(doc => doc.id || doc);
+              }
+              return {
+                ...bot,
+                documentIds: documentIds || []
+              };
+            });
+          
+          // Store full bots list (all bots)
+          setBotsList(processedBots);
+          
+          // Filter only enabled bots for dropdown options
+          const enabledBots = processedBots.filter(bot => bot.enabled !== false);
+          
+          // Create dropdown options (only enabled bots)
+          const options = enabledBots.map(bot => ({
+            value: bot.id.toString(),
+            label: bot.name
+          }));
+          setBotOptions(options);
+        } else {
+          setBotOptions([]);
+          setBotsList([]);
+        }
+      } catch (error) {
+        console.error('Error loading bots:', error);
+        setBotOptions([]);
+        setBotsList([]);
+      }
+    };
 
-  const botOptions = [
-    { value: 'bot1', label: 'Bot 1' },
-    { value: 'bot2', label: 'Bot 2' },
-    { value: 'bot3', label: 'Bot 3' },
-  ];
+    loadBots();
+  }, []);
+
+  // Update selectedBotObject when selectedBot (dropdown value) changes
+  useEffect(() => {
+    if (selectedBot && botsList.length > 0) {
+      // Find bot and check if it's enabled
+      const bot = botsList.find(b => b.id.toString() === selectedBot.toString());
+      if (bot) {
+        if (bot.enabled !== false) {
+          setSelectedBotObject(bot);
+        } else {
+          // Bot is inactive, clear selection
+          setSelectedBotObject(null);
+          setSelectedBot(null);
+          alert('Bot นี้ถูก inactive แล้ว กรุณาเลือก Bot อื่น');
+        }
+      } else {
+        setSelectedBotObject(null);
+      }
+    } else {
+      setSelectedBotObject(null);
+    }
+  }, [selectedBot, botsList]);
 
   return (
     <div className='flex h-screen bg-white relative'>
@@ -82,8 +160,13 @@ function Homepage() {
           options={botOptions}
           selectedValue={selectedBot}
           onSelect={setSelectedBot}
-          placeholder="Select Bots"
+          placeholder="เลือก Bot (จำเป็น)"
         />
+        {selectedBot && (
+          <span className='text-xs text-gray-500 ml-2'>
+            Bot ที่เลือก: {botOptions.find(opt => opt.value === selectedBot)?.label || selectedBot}
+          </span>
+        )}
         <button className='text-gray-600 text-xl cursor-pointer hover:text-gray-800 transition'>
           <HiPencilAlt />
         </button>

@@ -48,35 +48,14 @@ function Auth() {
     try {
       const loginResponse = await authAPI.login(signInEmail, signInPassword);
       
-      // Store user data in localStorage
+      // Store only minimal user data in localStorage (id only — no PII)
       if (loginResponse.user) {
-        const user = loginResponse.user;
-        const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || '';
-        const userData = {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          fullName: fullName,
-          name: fullName,
-          emailVerified: user.emailVerified,
-        };
-        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('user', JSON.stringify({ id: loginResponse.user.id }));
       } else {
         // If user data not in response, fetch it
         try {
           const user = await userAPI.getCurrentUser();
-          const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || '';
-          const userData = {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            fullName: fullName,
-            name: fullName,
-            emailVerified: user.emailVerified,
-          };
-          localStorage.setItem('user', JSON.stringify(userData));
+          localStorage.setItem('user', JSON.stringify({ id: user.id }));
         } catch (fetchError) {
           console.error('Error fetching user data:', fetchError);
         }
