@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiBell } from 'react-icons/hi';
 
-const EXPIRY_ALERT_DAYS = 30;
+const EXPIRY_ALERT_DAYS = 7;
 
 function parseThaiDate(thaiDateStr) {
   const thaiMonths = {
@@ -135,11 +135,15 @@ function NotificationBell({ users }) {
         aria-label="Notifications"
       >
         <HiBell className="w-8 h-8" />
-        {showBadge && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 border-2 border-white" />}
+        {totalNotifications > 0 && (
+          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center border-2 border-white">
+            {totalNotifications > 99 ? '99+' : totalNotifications}
+          </span>
+        )}
       </button>
 
       {isOpen && (
-        <div className="absolute top-10 right-0 w-96 bg-white border border-gray-200 rounded-xl shadow-xl z-[130] overflow-hidden">
+        <div className="absolute top-10 right-0 w-96 bg-white border border-gray-200 rounded-xl shadow-xl z-[200] overflow-hidden">
           <div className="border-b border-gray-200 px-4 pt-3">
             <div className="flex items-center gap-3">
               <button className={tabClassName('pending')} onClick={() => setActiveTab('pending')}>

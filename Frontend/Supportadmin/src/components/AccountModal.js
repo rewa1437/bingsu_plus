@@ -2,9 +2,14 @@ import { useEffect, useState } from 'react';
 import { HiOutlineUser, HiTrash } from 'react-icons/hi';
 
 const avatarOptions = [
+  { key: 'man', label: 'ผู้ชาย', emoji: '👨' },
+  { key: 'woman', label: 'ผู้หญิง', emoji: '👩' },
   { key: 'dog', label: 'หมา', emoji: '🐶' },
   { key: 'cat', label: 'แมว', emoji: '🐱' },
-  { key: 'pig', label: 'หมู', emoji: '🐷' }
+  { key: 'pig', label: 'หมู', emoji: '🐷' },
+  { key: 'bear', label: 'หมี', emoji: '🐻' },
+  { key: 'panda', label: 'แพนด้า', emoji: '🐼' },
+  { key: 'tiger', label: 'เสือ', emoji: '🐯' }
 ];
 
 function AccountModal({
@@ -59,8 +64,8 @@ function AccountModal({
 
             {showAvatarPicker && (
               <div className='mb-6'>
-                <p className='text-sm text-gray-700 mb-3'>เลือกอวาตาร์การ์ตูน</p>
-                <div className='flex gap-3'>
+                <p className='text-sm text-gray-700 mb-3'>เลือกอวาตาร์ของคุณ</p>
+                <div className='grid grid-cols-4 gap-3'>
                   {avatarOptions.map((option) => {
                     const isSelected = selectedAvatar === option.emoji;
 

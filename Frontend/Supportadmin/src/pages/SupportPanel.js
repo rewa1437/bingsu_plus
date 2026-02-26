@@ -12,6 +12,8 @@ function SupportPanel({ users, setUsers }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [roleFilters, setRoleFilters] = useState([]);
   const [showRoleFilter, setShowRoleFilter] = useState(false);
+  const [expiryFilters, setExpiryFilters] = useState([]);
+  const [showExpiryFilter, setShowExpiryFilter] = useState(false);
   const [groupSearchQuery, setGroupSearchQuery] = useState('');
   const [highlightedUserId, setHighlightedUserId] = useState(null);
   const [openActionMenuUserId, setOpenActionMenuUserId] = useState(null);
@@ -38,6 +40,7 @@ function SupportPanel({ users, setUsers }) {
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDescription, setNewGroupDescription] = useState('');
   const filterRef = useRef(null);
+  const expiryFilterRef = useRef(null);
   const actionMenuRef = useRef(null);
   const groupActionMenuRef = useRef(null);
   const location = useLocation();
@@ -70,13 +73,16 @@ function SupportPanel({ users, setUsers }) {
   const handleConfirmApprove = () => {
     setUsers(users.map(user => {
       if (user.id === selectedUserId) {
-        // Calculate expiry date 3 months from creation date
-        const createdDate = parseThaiDate(user.createdAt);
-        const expiryDate = new Date(createdDate);
+        // Use current date as creation date
+        const today = new Date();
+        const createdAt = formatThaiDate(today);
+        
+        // Calculate expiry date 3 months from today
+        const expiryDate = new Date(today);
         expiryDate.setMonth(expiryDate.getMonth() + 3);
         const expiresAt = formatShortDate(expiryDate);
         
-        return { ...user, role: 'ผู้ใช้งาน', roleType: 'user', expiresAt, isEnabled: true };
+        return { ...user, role: 'ผู้ใช้งาน', roleType: 'user', createdAt, expiresAt, isEnabled: true };
       }
       return user;
     }));
@@ -97,6 +103,14 @@ function SupportPanel({ users, setUsers }) {
     );
   };
 
+  const handleExpiryFilterToggle = (filterType) => {
+    setExpiryFilters(prev => 
+      prev.includes(filterType)
+        ? prev.filter(f => f !== filterType)
+        : [...prev, filterType]
+    );
+  };
+
   const roleOptions = [
     { type: 'pending', label: 'รอดำเนินการ', color: 'bg-gray-400' },
     { type: 'user', label: 'ผู้ใช้งาน', color: 'bg-yellow-400' },
@@ -104,10 +118,21 @@ function SupportPanel({ users, setUsers }) {
     { type: 'admin', label: 'แอดมิน', color: 'bg-green-400' }
   ];
 
+  const expiryOptions = [
+    { type: '1-7', label: '1-7 วัน', min: 1, max: 7 },
+    { type: '8-30', label: '8-30 วัน', min: 8, max: 30 },
+    { type: '30+', label: 'มากกว่า 30 วัน', min: 31, max: Infinity },
+    { type: 'expired', label: 'หมดอายุแล้ว', min: -Infinity, max: 0 }
+  ];
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (filterRef.current && !filterRef.current.contains(event.target)) {
         setShowRoleFilter(false);
+      }
+
+      if (expiryFilterRef.current && !expiryFilterRef.current.contains(event.target)) {
+        setShowExpiryFilter(false);
       }
 
       if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
@@ -182,10 +207,46 @@ function SupportPanel({ users, setUsers }) {
     return `${day}/${month}/${year}`;
   };
 
+  const formatThaiDate = (date) => {
+    const thaiMonths = [
+      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
+      'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
+      'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+    ];
+    const day = date.getDate();
+    const month = thaiMonths[date.getMonth()];
+    const year = date.getFullYear() + 543;
+    return `${day} ${month} ${year}`;
+  };
+
   const formatDisplayDate = (value) => {
     if (!value || value === '-') return '-';
     if (value.includes('/')) return value;
     return formatShortDate(parseThaiDate(value));
+  };
+
+  const getDaysUntilExpiry = (expiresAtValue) => {
+    if (!expiresAtValue || expiresAtValue === '-') return null;
+    const expiryDate = parseDisplayDateToDate(expiresAtValue);
+    if (!expiryDate || Number.isNaN(expiryDate.getTime())) return null;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    expiryDate.setHours(0, 0, 0, 0);
+    
+    const diffTime = expiryDate.getTime() - today.getTime();
+    const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return daysLeft;
+  };
+
+  const isExpiryExpiringSoon = (expiresAtValue) => {
+    const daysLeft = getDaysUntilExpiry(expiresAtValue);
+    return daysLeft !== null && daysLeft <= 7 && daysLeft > 0;
+  };
+
+  const isExpiryExpiredOrSoon = (expiresAtValue) => {
+    const daysLeft = getDaysUntilExpiry(expiresAtValue);
+    return daysLeft !== null && daysLeft <= 7;
   };
 
   const targetUser = useMemo(
@@ -262,16 +323,54 @@ function SupportPanel({ users, setUsers }) {
       const matchesSearch = user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            user.email.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesRole = roleFilters.length === 0 || roleFilters.includes(user.roleType);
-      return matchesSearch && matchesRole;
+      
+      // Filter by expiry date (exclude pending users from expiry filter)
+      let matchesExpiry = true;
+      if (expiryFilters.length > 0) {
+        // Pending users should not appear in expiry filter
+        if (user.roleType === 'pending') {
+          matchesExpiry = false;
+        } else {
+          const daysLeft = getDaysUntilExpiry(user.expiresAt);
+          matchesExpiry = expiryFilters.some(filterType => {
+            const option = expiryOptions.find(opt => opt.type === filterType);
+            if (!option) return false;
+            
+            if (daysLeft === null) return false;
+            return daysLeft >= option.min && daysLeft <= option.max;
+          });
+        }
+      }
+      
+      return matchesSearch && matchesRole && matchesExpiry;
     });
+
+    // Sort by expiry date (soonest first) if filter is active
+    if (expiryFilters.length > 0) {
+      return filtered.sort((a, b) => {
+        // Handle users without expiry date (show them last)
+        if (!a.expiresAt || a.expiresAt === '-') return 1;
+        if (!b.expiresAt || b.expiresAt === '-') return -1;
+
+        const dateA = parseDisplayDateToDate(a.expiresAt);
+        const dateB = parseDisplayDateToDate(b.expiresAt);
+        
+        if (!dateA || !dateB) return 0;
+        return dateA - dateB; // Ascending order (expires soonest first)
+      });
+    }
 
     // Always sort by creation date (newest first)
     return filtered.sort((a, b) => {
+      // Handle users without createdAt (pending)
+      if (!a.createdAt || a.createdAt === '-') return 1;
+      if (!b.createdAt || b.createdAt === '-') return -1;
+      
       const dateA = parseThaiDate(a.createdAt);
       const dateB = parseThaiDate(b.createdAt);
       return dateB - dateA; // Descending order (newest first)
     });
-  }, [users, searchQuery, roleFilters]);
+  }, [users, searchQuery, roleFilters, expiryFilters]);
 
   const paginatedUsers = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -591,7 +690,7 @@ function SupportPanel({ users, setUsers }) {
           <thead className="bg-white border-b border-gray-200">
             <tr>
               <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">
-                <div className="flex items-center space-x-2 relative z-[130]" ref={filterRef}>
+                <div className="flex items-center space-x-2 relative" ref={filterRef}>
                   <span>บทบาท</span>
                   <button
                     onClick={() => setShowRoleFilter(!showRoleFilter)}
@@ -605,7 +704,7 @@ function SupportPanel({ users, setUsers }) {
                     </span>
                   )}
                   {showRoleFilter && (
-                    <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[140] w-48">
+                    <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[50] w-48">
                       <div className="p-3 space-y-2">
                         {roleOptions.map((option) => (
                           <label
@@ -641,7 +740,50 @@ function SupportPanel({ users, setUsers }) {
               <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">Knowledge</th>
               <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">ใช้งานล่าสุด</th>
               <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">สร้างเมื่อ</th>
-              <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">วันหมดอายุ</th>
+              <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">
+                <div className="flex items-center space-x-2 relative" ref={expiryFilterRef}>
+                  <span>วันหมดอายุ</span>
+                  <button
+                    onClick={() => setShowExpiryFilter(!showExpiryFilter)}
+                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    <HiFilter className="w-4 h-4" />
+                  </button>
+                  {expiryFilters.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                      {expiryFilters.length}
+                    </span>
+                  )}
+                  {showExpiryFilter && (
+                    <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[50] w-52">
+                      <div className="p-3 space-y-2">
+                        {expiryOptions.map((option) => (
+                          <label
+                            key={option.type}
+                            className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={expiryFilters.includes(option.type)}
+                              onChange={() => handleExpiryFilterToggle(option.type)}
+                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-700">{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <div className="border-t border-gray-200 p-2">
+                        <button
+                          onClick={() => setExpiryFilters([])}
+                          className="w-full text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 py-1 rounded"
+                        >
+                          ล้างทั้งหมด
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </th>
               <th className="px-4 py-3"></th>
               <th className="px-4 py-3"></th>
             </tr>
@@ -650,6 +792,7 @@ function SupportPanel({ users, setUsers }) {
             {paginatedUsers.map((user) => (
               <tr
                 key={user.id}
+                onClick={() => highlightedUserId && setHighlightedUserId(null)}
                 className={`hover:bg-gray-50 transition-colors ${
                   highlightedUserId === user.id
                     ? 'bg-red-50 animate-pulse'
@@ -673,7 +816,12 @@ function SupportPanel({ users, setUsers }) {
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-medium ${user.avatarColor}`}>
                       {user.avatar}
                     </div>
-                    <span className="text-gray-900">{user.username}</span>
+                    <span 
+                      onClick={() => highlightedUserId && setHighlightedUserId(null)}
+                      className="text-gray-900"
+                    >
+                      {user.username}
+                    </span>
                   </div>
                 </td>
                 <td className="px-4 py-4 text-gray-600">{user.email}</td>
@@ -686,8 +834,14 @@ function SupportPanel({ users, setUsers }) {
                 <td className="px-4 py-4 text-gray-600">
                   {user.roleType !== 'pending' ? user.lastActive : '-'}
                 </td>
-                <td className="px-4 py-4 text-gray-600">{formatDisplayDate(user.createdAt)}</td>
-                <td className="px-4 py-4 text-red-500">
+                <td className="px-4 py-4 text-gray-600">
+                  {user.roleType !== 'pending' ? formatDisplayDate(user.createdAt) : '-'}
+                </td>
+                <td className={`px-4 py-4 ${
+                  user.roleType !== 'pending' && isExpiryExpiredOrSoon(user.expiresAt) 
+                    ? 'text-red-500 font-semibold' 
+                    : 'text-gray-600'
+                }`}>
                   {user.roleType !== 'pending' ? formatDisplayDate(user.expiresAt) : '-'}
                 </td>
                 <td className="px-4 py-4">
@@ -717,7 +871,7 @@ function SupportPanel({ users, setUsers }) {
                 </td>
                 <td className="px-4 py-4">
                   <div className="relative" ref={openActionMenuUserId === user.id ? actionMenuRef : null}>
-                      {user.roleType === 'pending' ? (
+                      {user.roleType === 'pending' || !user.isEnabled ? (
                         <button
                           disabled
                           className="text-gray-400 cursor-not-allowed"
@@ -737,7 +891,7 @@ function SupportPanel({ users, setUsers }) {
                       </button>
                       )}
 
-                      {user.roleType !== 'pending' && openActionMenuUserId === user.id && (
+                      {user.roleType !== 'pending' && user.isEnabled && openActionMenuUserId === user.id && (
                         <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-[110] overflow-hidden">
                           <button
                             onClick={() => handleOpenPasswordModal(user.id)}
@@ -1029,6 +1183,12 @@ function SupportPanel({ users, setUsers }) {
                 {calculatedExtendedDate
                   ? `วันหมดอายุใหม่: ${formatShortDate(calculatedExtendedDate)}`
                   : 'ไม่พบวันหมดอายุเดิมสำหรับคำนวณ'}
+              </div>
+
+              <div className="bg-red-50 rounded-lg px-2 py-1.5">
+                <p className="text-sm text-red-600 font-semibold text-center">
+                  **เมื่อกดยืนยันแล้วไม่สามารถปรับลดวันหมดอายุได้**
+                </p>
               </div>
             </div>
 

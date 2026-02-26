@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
 import Bots from './pages/Bots';
 import BotDetail from './pages/BotDetail';
 import Knowledge from './pages/knowledge';
@@ -30,7 +31,8 @@ function AppContent() {
           <NotificationBell users={users} />
         </div>
         <Routes>
-          <Route path="/" element={<Navigate to="/homepage" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/homepage" element={<Home />} />
           <Route path="/home" element={<Navigate to="/homepage" replace />} />
           <Route path="/bots" element={<Bots />} />

@@ -43,7 +43,7 @@ function Login() {
     setTimeout(() => {
       setSignInLoading(false);
       // Navigate to homepage (frontend only)
-      navigate('/homepage');
+      navigate('/Dashboard ');
     }, 1000);
   };
 
@@ -85,14 +85,13 @@ function Login() {
       }}>
         <div className="flex flex-col items-center pt-8 transition-all duration-500 ease-in-out overflow-hidden">
           {/* Logo */}
-          <div className="mb-4 h-20 w-20 flex items-center justify-center rounded-full bg-yellow-100 transition-all duration-500 ease-in-out hover:scale-110 hover:rotate-6 cursor-default overflow-hidden">
+          <div className="mb-6 h-20 w-20 flex items-center justify-center rounded-full bg-yellow-100 transition-all duration-500 ease-in-out hover:scale-110 hover:rotate-6 cursor-default overflow-hidden">
             <img src={bingsuLogo} alt="BingSu Logo" className="w-full h-full object-cover rounded-full" />
           </div>
-          <h2 className="mb-2 text-2xl font-bold text-zinc-800 text-center transition-all duration-500 ease-in-out drop-shadow-lg" style={{ textShadow: '0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(38, 0, 255, 0.06)' }}>
+          <h2 className="mb-6 text-2xl font-bold text-zinc-800 text-center transition-all duration-500 ease-in-out drop-shadow-lg" style={{ textShadow: '0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(38, 0, 255, 0.06)' }}>
             <span className="block">BingSu</span>
             <span className="block">Support & Admin</span>
           </h2>
-          <p className="mb-6 text-sm text-zinc-500">Please sign in your email</p>
 
           <div className="w-full max-w-xs relative overflow-hidden" style={{ minHeight: '280px' }}>
             <div 
