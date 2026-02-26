@@ -91,6 +91,7 @@ class Chat(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=True)  # Optional chat room name
+    botId = Column(Integer, ForeignKey("Bot.id", ondelete="SET NULL"), nullable=True, index=True)  # Bot used in this chat
     createdAt = Column(DateTime(timezone=True), server_default=func.now())
     updatedAt = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     lastUsed = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), index=True)
@@ -98,6 +99,7 @@ class Chat(Base):
     # Relationships
     users = relationship("User", secondary=chat_users, back_populates="chats")
     messages = relationship("ChatMessage", back_populates="chat", cascade="all, delete-orphan")
+    bot = relationship("Bot", foreign_keys=[botId])
 
 
 class ChatMessage(Base):

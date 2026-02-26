@@ -44,7 +44,7 @@ async def extract_text_from_file(
             if not response.is_success:
                 return {
                     "ok": False,
-                    "error": f"OCR service error: {response.status_code} - {response.text}"
+                    "error": f"OCR service error: HTTP {response.status_code}"
                 }
             
             return response.json()
@@ -56,5 +56,5 @@ async def extract_text_from_file(
     except Exception as e:
         return {
             "ok": False,
-            "error": f"OCR service error: {str(e)}"
+            "error": f"OCR service error: {type(e).__name__}"
         }

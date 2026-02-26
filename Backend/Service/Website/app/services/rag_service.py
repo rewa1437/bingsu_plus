@@ -7,6 +7,7 @@ from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 from app.services.embeddings_service import embed_texts
 from app.services.qdrant_client import search_qdrant, QDRANT_TOP_K
+from app.utils.sanitize import sanitize_for_log
 
 load_dotenv()
 
@@ -176,5 +177,5 @@ async def retrieve_grounding_chunks(
         print("⚠️  RAG request timed out")
         return []
     except Exception as e:
-        print(f"⚠️  Qdrant search failed: {e}")
+        print(f"⚠️  Qdrant search failed: {sanitize_for_log(str(e))}")
         return []

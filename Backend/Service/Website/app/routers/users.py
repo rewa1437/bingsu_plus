@@ -1,6 +1,7 @@
 """
 User routes - User information and profile
 """
+import os
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session, joinedload
 from typing import List
@@ -52,6 +53,7 @@ async def get_current_user_profile(
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
     user_id: int, 
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get user by ID"""
@@ -157,6 +159,7 @@ async def register_user(
         .first()
     )
     
+    _is_dev = os.getenv("ENV", "development").lower() == "development"
     return RegisterResponse(
         id=db_user.id,
         email=db_user.email,
@@ -169,7 +172,7 @@ async def register_user(
         avatarUrl=db_user.avatarUrl,
         createdAt=db_user.createdAt,
         updatedAt=db_user.updatedAt,
-        verificationToken=verification_token,
+        verificationToken=verification_token if _is_dev else None,
         credential=None
     )
 

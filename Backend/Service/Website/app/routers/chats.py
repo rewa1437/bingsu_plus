@@ -69,8 +69,25 @@ async def create_chat(
 ):
     """Create a new chat"""
     from datetime import datetime
+    from app.models import Bot
+    
+    # Validate botId if provided
+    bot_id = chat.botId
+    if bot_id:
+        bot = db.query(Bot).filter(Bot.id == bot_id, Bot.ownerId == current_user.id).first()
+        if not bot:
+            raise HTTPException(status_code=404, detail=f"Bot not found or you don't have access to it")
+        if not bot.enabled:
+            raise HTTPException(status_code=400, detail=f"Bot is inactive. Please activate the bot first.")
+    
     now = datetime.now()
-    db_chat = Chat(name=chat.name, createdAt=now, updatedAt=now, lastUsed=now)
+    db_chat = Chat(
+        name=chat.name, 
+        botId=bot_id,
+        createdAt=now, 
+        updatedAt=now, 
+        lastUsed=now
+    )
     db.add(db_chat)
     db.flush()
     

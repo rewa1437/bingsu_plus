@@ -15,6 +15,7 @@ import os
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from app.utils.sanitize import sanitize_for_log
 
 # Import database
 from app.database import engine, Base
@@ -30,8 +31,8 @@ try:
     Base.metadata.create_all(bind=engine)
     print("✓ Database tables created/verified successfully")
 except Exception as e:
-    print(f"⚠️  Warning: Could not create database tables: {e}")
-    print("   Make sure PostgreSQL is running and DATABASE_URL is correct")
+    print(f"⚠️  Warning: Could not create database tables: {sanitize_for_log(str(e))}")
+    print("   Make sure PostgreSQL is running and accessible")
 
 # Initialize rate limiter (with Redis backend if available)
 from app.utils.redis_rate_limiter import get_redis_limiter
@@ -135,12 +136,12 @@ async def general_exception_handler(request: Request, exc: Exception):
     if isinstance(exc, HTTPException):
         raise exc
     
-    app_logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    # In development, show more details
+    app_logger.error(f"Unhandled exception: {sanitize_for_log(str(exc))}", exc_info=True)
+    # In development, show sanitized details (no API keys / internal paths)
     env_mode = os.getenv("ENV", "development").lower()
     detail = "Internal server error"
     if env_mode == "development":
-        detail = f"Internal server error: {type(exc).__name__}: {str(exc)}"
+        detail = f"Internal server error: {type(exc).__name__}: {sanitize_for_log(str(exc))}"
     
     response = JSONResponse(
         status_code=500,

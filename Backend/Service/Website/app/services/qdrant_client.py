@@ -8,6 +8,7 @@ import asyncio
 from typing import List, Optional, Dict, Any
 import httpx
 from dotenv import load_dotenv
+from app.utils.sanitize import sanitize_for_log
 
 load_dotenv()
 
@@ -72,30 +73,26 @@ async def _qdrant_request(
                 except:
                     error_msg = f"Qdrant request failed: {response.status_code} - {error_text}"
                 
-                print(f"❌ {error_msg}")
-                print(f"   URL: {url}")
-                print(f"   Method: {method}")
+                print(f"❌ Qdrant request failed: {response.status_code}")
+                print(f"   Method: {method}, Path: {path}")
                 # Include status code in exception for easier detection
-                # Store status code in exception for easier detection in ensure_collection
                 exception = Exception(error_msg)
-                exception.status_code = response.status_code  # Store status code for detection
+                exception.status_code = response.status_code
                 raise exception
             
             return response.json()
     except httpx.ConnectError as e:
-        error_msg = f"Qdrant connection error: Cannot connect to {QDRANT_URL}. Is Qdrant running?"
+        error_msg = "Qdrant connection error: service unavailable"
         print(f"❌ {error_msg}")
-        print(f"   Error: {str(e)}")
         raise Exception(error_msg)
     except httpx.TimeoutException as e:
-        error_msg = f"Qdrant timeout: Request to {QDRANT_URL} timed out after {timeout}s"
+        error_msg = f"Qdrant timeout: request timed out after {timeout}s"
         print(f"❌ {error_msg}")
         raise Exception(error_msg)
     except Exception as e:
-        error_msg = f"Qdrant request error: {str(e)}"
-        print(f"❌ {error_msg}")
-        print(f"   URL: {url}")
-        raise Exception(error_msg)
+        if not isinstance(e, (httpx.ConnectError, httpx.TimeoutException)):
+            print(f"❌ Qdrant request error: {sanitize_for_log(str(e))}")
+        raise
 
 
 async def ensure_collection(vector_size: int) -> None:
@@ -147,8 +144,6 @@ async def ensure_collection(vector_size: int) -> None:
         )
         
         print(f"   Error checking collection: status_code={status_code}, is_not_found={is_not_found}")
-        print(f"   Error message (first 300 chars): {error_msg[:300]}")
-        print(f"   Error message (lowercase): {error_msg_lower[:300]}")
         
         if is_not_found:
             # Create collection
@@ -174,15 +169,12 @@ async def ensure_collection(vector_size: int) -> None:
                 else:
                     raise Exception("Collection creation succeeded but verification failed")
             except Exception as create_error:
-                error_msg = str(create_error)
-                print(f"❌ Failed to create collection '{QDRANT_COLLECTION}': {error_msg}")
-                # Reset state on failure
+                print(f"❌ Failed to create collection '{QDRANT_COLLECTION}': {sanitize_for_log(str(create_error))}")
                 _collection_ready = False
                 _collection_size = None
-                raise Exception(f"Failed to create Qdrant collection: {error_msg}")
+                raise Exception(f"Failed to create Qdrant collection")
         else:
-            # Re-raise other errors
-            print(f"❌ Error checking collection '{QDRANT_COLLECTION}': {error_msg}")
+            print(f"❌ Error checking collection '{QDRANT_COLLECTION}': {sanitize_for_log(error_msg)}")
             # Reset state on error
             _collection_ready = False
             _collection_size = None
@@ -225,7 +217,7 @@ async def delete_document_vectors(document_id: str) -> None:
             print(f"ℹ️  Collection '{QDRANT_COLLECTION}' doesn't exist - nothing to delete for document {document_id}")
             return
         # For other errors, log but don't fail
-        print(f"⚠️  Error checking collection before delete: {error_msg}")
+        print(f"⚠️  Error checking collection before delete: {sanitize_for_log(error_msg)}")
         return
     
     try:
@@ -251,7 +243,7 @@ async def delete_document_vectors(document_id: str) -> None:
             print(f"ℹ️  No vectors to delete for document {document_id} (collection or points not found)")
             return
         # Log other errors but don't fail - this is a best-effort operation
-        print(f"⚠️  Error deleting vectors for document {document_id}: {error_msg}")
+        print(f"⚠️  Error deleting vectors for document {document_id}: {sanitize_for_log(error_msg)}")
         # Don't raise - allow operation to continue
 
 
@@ -289,10 +281,10 @@ async def check_qdrant_connection() -> bool:
     """Check if Qdrant is accessible"""
     try:
         response = await _qdrant_request("/", method="GET", timeout=5.0)
-        print(f"✓ Qdrant is accessible at {QDRANT_URL}")
+        print(f"✓ Qdrant is accessible")
         return True
     except Exception as e:
-        print(f"❌ Qdrant connection check failed: {str(e)}")
+        print(f"❌ Qdrant connection check failed: {sanitize_for_log(str(e))}")
         return False
 
 
@@ -304,7 +296,6 @@ async def index_document_chunks(
 ) -> None:
     """Index document chunks to Qdrant"""
     print(f"🔍 Starting Qdrant indexing for document {document_id}...")
-    print(f"   Qdrant URL: {QDRANT_URL}")
     print(f"   Collection: {QDRANT_COLLECTION}")
     
     try:
@@ -321,7 +312,7 @@ async def index_document_chunks(
         
         # Check Qdrant connection first
         if not await check_qdrant_connection():
-            raise Exception(f"Qdrant is not accessible at {QDRANT_URL}. Please check if Qdrant service is running.")
+            raise Exception("Qdrant service is not accessible")
         chunks = []
         print(f"   Processing {len(source_files or [])} source files...")
         for file_index, file in enumerate(source_files or []):
@@ -401,13 +392,12 @@ async def index_document_chunks(
             print(f"❌ {error_msg}")
             raise Exception(error_msg)
         except Exception as e:
-            error_msg = str(e)
-            if "API_KEY" in error_msg or "quota" in error_msg or "429" in error_msg:
+            error_msg = sanitize_for_log(str(e))
+            if "api_key" in str(e).lower() or "quota" in str(e).lower() or "429" in str(e):
                 print(f"❌ Skipping Qdrant indexing: {error_msg}")
-                raise Exception(f"Embedding API error: {error_msg}")
-            # Re-raise embedding errors
+                raise Exception(f"Embedding API error")
             print(f"❌ Embedding error for document {document_id}: {error_msg}")
-            raise Exception(f"Embedding error: {error_msg}")
+            raise Exception(f"Embedding error")
         
         if not vectors or not vectors[0]:
             error_msg = (
@@ -434,9 +424,8 @@ async def index_document_chunks(
             print(f"❌ {error_msg}")
             raise Exception(error_msg)
         except Exception as e:
-            error_msg = f"Qdrant collection error for document {document_id}: {str(e)}"
-            print(f"❌ {error_msg}")
-            raise Exception(error_msg)
+            print(f"❌ Qdrant collection error for document {document_id}: {sanitize_for_log(str(e))}")
+            raise Exception(f"Qdrant collection error")
         
         points = [
             {
@@ -463,14 +452,12 @@ async def index_document_chunks(
                 print(f"❌ {error_msg}")
                 raise Exception(error_msg)
             except Exception as e:
-                error_msg = f"Qdrant upsert error for document {document_id}: {str(e)}"
-                print(f"❌ {error_msg}")
-                raise Exception(error_msg)
+                print(f"❌ Qdrant upsert error for document {document_id}: {sanitize_for_log(str(e))}")
+                raise Exception(f"Qdrant upsert error")
         
         print(f"✓ Successfully indexed {len(points)} chunks for document {document_id} in Qdrant")
     except Exception as e:
-        # Log full error details
-        error_msg = str(e)
+        error_msg = sanitize_for_log(str(e))
         print(f"❌ Error indexing document {document_id} in Qdrant: {error_msg}")
         
         # Check if error indicates frontend data issue
@@ -478,19 +465,12 @@ async def index_document_chunks(
             "sourceFiles is None",
             "sourceFiles must be a list",
             "sourceFiles is empty",
-            "no 'blocks' and no 'text' field",
             "No chunks to index",
             "Empty vectors"
         ]
-        is_frontend_issue = any(indicator in error_msg for indicator in frontend_data_indicators)
+        is_frontend_issue = any(indicator in str(e) for indicator in frontend_data_indicators)
         
         if is_frontend_issue:
-            print(f"   ⚠️  This error likely indicates a frontend data format issue!")
-            print(f"   ⚠️  Check AddKnowledgeData.js - ensure sourceFiles are sent correctly")
-            print(f"   ⚠️  Expected format: sourceFiles = [{'{'} name, fileName, text, blocks [] {'}'}, ...]")
+            print(f"   ⚠️  This error likely indicates a data format issue in the request")
         
-        import traceback
-        print("Full traceback:")
-        traceback.print_exc()
-        # Re-raise to see the actual error
         raise Exception(f"Qdrant indexing failed: {error_msg}")

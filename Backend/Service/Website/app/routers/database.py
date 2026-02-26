@@ -8,6 +8,9 @@ from sqlalchemy import text
 from typing import List, Dict, Any
 
 from app.database import get_db
+from app.dependencies import get_current_user
+from app.models import User
+from app.utils.sanitize import sanitize_for_log
 
 router = APIRouter(tags=["database"])
 
@@ -19,7 +22,7 @@ def validate_identifier(identifier: str) -> bool:
 
 
 @router.get("/database/schemas")
-async def get_all_schemas(db: Session = Depends(get_db)):
+async def get_all_schemas(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     Get all schemas from PostgreSQL database
     Returns list of schemas with their details
@@ -108,12 +111,12 @@ async def get_all_schemas(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Error fetching schemas: {str(e)}"
+            detail=f"Error fetching schemas: {sanitize_for_log(str(e))}"
         )
 
 
 @router.get("/database/schemas/{schema_name}")
-async def get_schema_details(schema_name: str, db: Session = Depends(get_db)):
+async def get_schema_details(schema_name: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     Get detailed information about a specific schema
     """
@@ -202,7 +205,7 @@ async def get_schema_details(schema_name: str, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Error fetching schema details: {str(e)}"
+            detail=f"Error fetching schema details: {sanitize_for_log(str(e))}"
         )
 
 
@@ -212,6 +215,7 @@ async def get_table_data(
     table_name: str,
     limit: int = 100,
     offset: int = 0,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -306,5 +310,5 @@ async def get_table_data(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Error fetching table data: {str(e)}"
+            detail=f"Error fetching table data: {sanitize_for_log(str(e))}"
         )

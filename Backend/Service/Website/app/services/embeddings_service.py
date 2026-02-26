@@ -6,6 +6,7 @@ import os
 from typing import List, Optional
 import httpx
 from dotenv import load_dotenv
+from app.utils.sanitize import sanitize_for_log
 
 load_dotenv()
 
@@ -25,23 +26,13 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 async def embed_texts_openai(texts: List[str]) -> List[List[float]]:
     """Generate embeddings using OpenAI-compatible API (supports OpenAI API or LLM Gateway)"""
     if not EMBEDDING_API_KEY:
-        raise ValueError("Missing EMBEDDING_API_KEY in environment variables. Please set EMBEDDING_API_KEY in your .env file.")
+        raise ValueError("Embedding API key is not configured")
     
     # Check if using placeholder API key (only check for obvious placeholders)
     placeholder_keys = ["your-api-key", "your-ope", "sk-placeholder", "your-openai-api-key", "sk-your"]
-    # Only check if key starts with placeholder patterns (not if it contains them)
     key_lower = EMBEDDING_API_KEY.lower()
     if any(key_lower.startswith(placeholder) or key_lower == placeholder for placeholder in placeholder_keys):
-        is_gateway = "aigateway" in EMBEDDING_BASE_URL.lower() or "gateway" in EMBEDDING_BASE_URL.lower()
-        error_msg = (
-            f"Incorrect API key provided: {EMBEDDING_API_KEY[:20]}... "
-            f"You are using a placeholder API key. Please set a valid EMBEDDING_API_KEY in your .env file."
-        )
-        if is_gateway:
-            error_msg += " If using LLM Gateway, ensure you have a valid API key from the gateway service."
-        else:
-            error_msg += " You can find your API key at https://platform.openai.com/account/api-keys"
-        raise ValueError(error_msg)
+        raise ValueError("Embedding API key is a placeholder — please configure a valid key")
     
     if not texts:
         return []
@@ -72,48 +63,21 @@ async def embed_texts_openai(texts: List[str]) -> List[List[float]]:
             error_detail = error_data.get("error", {}) if isinstance(error_data.get("error"), dict) else {}
             error_msg = error_detail.get("message", response.text) or f"HTTP {response.status_code}"
             
-            # Log full error for debugging
+            # Log sanitized error for debugging
             is_gateway = "aigateway" in EMBEDDING_BASE_URL.lower() or "gateway" in EMBEDDING_BASE_URL.lower()
             api_name = "LLM Gateway" if is_gateway else "OpenAI API"
             print(f"❌ {api_name} error: Status {response.status_code}")
-            print(f"   Base URL: {EMBEDDING_BASE_URL}")
-            print(f"   Error message: {error_msg}")
-            print(f"   Full error data: {error_data}")
+            print(f"   Error message: {sanitize_for_log(error_msg)}")
             
-            # Provide helpful error message for API key issues
+            # Raise sanitized error messages (no API keys, no internal paths)
             if response.status_code == 401:
-                if is_gateway:
-                    raise Exception(
-                        f"LLM Gateway authentication failed (401). Please check your EMBEDDING_API_KEY. "
-                        f"Error: {error_msg}. "
-                        f"Ensure you have a valid API key from the LLM Gateway service."
-                    )
-                else:
-                    raise Exception(
-                        f"OpenAI API authentication failed (401). Please check your EMBEDDING_API_KEY. "
-                        f"Error: {error_msg}. "
-                        f"You can find your API key at https://platform.openai.com/account/api-keys"
-                    )
+                raise Exception(f"{api_name} authentication failed (401)")
             elif "incorrect api key" in error_msg.lower() or "invalid api key" in error_msg.lower() or "invalid_api_key" in error_msg.lower():
-                if is_gateway:
-                    raise Exception(
-                        f"Invalid LLM Gateway API key. Please check your EMBEDDING_API_KEY. "
-                        f"Error: {error_msg}. "
-                        f"Ensure you have a valid API key from the LLM Gateway service."
-                    )
-                else:
-                    raise Exception(
-                        f"Invalid OpenAI API key. Please check your EMBEDDING_API_KEY. "
-                        f"Error: {error_msg}. "
-                        f"You can find your API key at https://platform.openai.com/account/api-keys"
-                    )
+                raise Exception(f"{api_name} authentication failed — invalid key")
             elif "insufficient_quota" in error_msg.lower() or "quota" in error_msg.lower():
-                raise Exception(
-                    f"API quota exceeded. Please check your account billing. "
-                    f"Error: {error_msg}"
-                )
+                raise Exception(f"{api_name} quota exceeded")
             
-            raise Exception(f"Embedding error ({api_name}): {error_msg}")
+            raise Exception(f"Embedding error ({api_name}): HTTP {response.status_code}")
         
         data = response.json().get("data", [])
         if len(data) != len(texts):
@@ -128,7 +92,7 @@ async def embed_texts_openai(texts: List[str]) -> List[List[float]]:
 async def embed_texts_gemini(texts: List[str]) -> List[List[float]]:
     """Generate embeddings using Gemini"""
     if not GEMINI_API_KEY:
-        raise ValueError("Missing GEMINI_API_KEY in environment variables")
+        raise ValueError("Gemini API key is not configured")
     
     if not texts:
         return []
@@ -158,7 +122,7 @@ async def embed_texts_gemini(texts: List[str]) -> List[List[float]]:
                 values = item.values if hasattr(item, 'values') else []
                 vectors.append([float(v) for v in values])
         except Exception as e:
-            raise Exception(f"Gemini embedding failed: {str(e)}")
+            raise Exception(f"Gemini embedding failed: {sanitize_for_log(str(e))}")
     
     return vectors
 
@@ -172,4 +136,4 @@ async def embed_texts(texts: List[str]) -> List[List[float]]:
     elif provider == "gemini":
         return await embed_texts_gemini(texts)
     else:
-        raise ValueError(f'Unsupported EMBEDDING_PROVIDER="{EMBEDDING_PROVIDER}". Use "openai" or "gemini".')
+        raise ValueError(f'Unsupported embedding provider. Use "openai" or "gemini".')

@@ -6,12 +6,28 @@ from typing import Optional
 from jose import JWTError, jwt
 from fastapi import HTTPException, status
 import os
+import secrets as _secrets_mod
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# JWT Configuration
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-this-in-production")
+# JWT Configuration — secure key handling
+_raw_jwt_secret = os.getenv("JWT_SECRET_KEY", "")
+_JWT_PLACEHOLDER_KEYS = {
+    "your-secret-key-change-this-in-production",
+    "your-secret-key-here-change-this-in-production",
+    "change-this-in-production",
+    "secret",
+}
+if not _raw_jwt_secret.strip() or _raw_jwt_secret.strip() in _JWT_PLACEHOLDER_KEYS:
+    SECRET_KEY = _secrets_mod.token_hex(32)
+    print("⚠️  WARNING: JWT_SECRET_KEY is not set or uses a default placeholder!")
+    print("   A random key was generated for this session.")
+    print("   Existing tokens will be invalidated on server restart.")
+    print("   Please set a strong JWT_SECRET_KEY in .env:")
+    print('   JWT_SECRET_KEY="<run: openssl rand -hex 32>"')
+else:
+    SECRET_KEY = _raw_jwt_secret.strip()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 JWT_ISSUER = os.getenv("JWT_ISSUER", "bingsu-api")

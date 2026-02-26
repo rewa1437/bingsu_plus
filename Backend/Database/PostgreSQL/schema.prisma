@@ -105,14 +105,17 @@ model Credential {
 model Chat {
   id        Int      @id @default(autoincrement())
   name      String?
+  botId     Int?     // Bot used in this chat (cannot be changed after creation)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   lastUsed  DateTime @default(now()) @updatedAt
   
   users     ChatUser[]
   messages  ChatMessage[]
+  bot       Bot?     @relation(fields: [botId], references: [id], onDelete: SetNull)
   
   @@index([lastUsed])
+  @@index([botId])
 }
 
 // Junction table for many-to-many relationship
@@ -169,6 +172,7 @@ model Bot {
 
   owner    User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   documents BotDocument[]
+  chats    Chat[]        // Chats that use this bot
 
   @@index([ownerId])
 }

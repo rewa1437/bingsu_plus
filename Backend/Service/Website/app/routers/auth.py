@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends, status, Request
 from sqlalchemy.orm import Session, joinedload
 from pydantic import BaseModel
 from typing import Optional
+import os
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -238,10 +239,11 @@ async def forgot_password(
     user.passwordResetExpiresAt = datetime.now() + timedelta(hours=24)  # 24 hour expiry
     db.commit()
     
+    _is_dev = os.getenv("ENV", "development").lower() == "development"
     return ForgotPasswordResponse(
         message="Password reset email sent (if email exists)",
         success=True,
-        resetToken=reset_token  # Only for development/testing
+        resetToken=reset_token if _is_dev else None
     )
 
 

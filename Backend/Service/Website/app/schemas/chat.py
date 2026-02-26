@@ -10,6 +10,7 @@ from app.schemas.user import UserResponse
 class ChatBase(BaseModel):
     """Base chat schema"""
     name: Optional[str] = Field(None, max_length=200, description="Chat name (max 200 characters)")
+    botId: Optional[int] = Field(None, description="Bot ID to use in this chat")
 
 
 class ChatCreate(ChatBase):
