@@ -6,7 +6,8 @@ import {
   HiHome, 
   HiDesktopComputer, 
   HiBookOpen, 
-  HiSupport
+  HiSupport,
+  HiViewGrid
 } from 'react-icons/hi';
 import bingsuLogo from '../assets/images/หน่องบิงไม่มีพื้นละ.png';
 import ProfileModal from './ProfileModal';
@@ -116,6 +117,13 @@ function Navbar({ onCollapseChange }) {
           >
             <HiSupport className='text-xl flex-shrink-0' />
             {!isCollapsed && <span>Support Panel</span>}
+          </div>
+          <div 
+            onClick={() => navigate('/dashboard')}
+            className={`nav-item ${isActive('/dashboard') ? 'nav-item-active' : 'nav-item-inactive'} hover:bg-gray-300 active:bg-gray-400 cursor-pointer rounded-lg transition-colors w-full py-1 px-2`}
+          >
+            <HiViewGrid className='text-xl flex-shrink-0' />
+            {!isCollapsed && <span>Dashboard</span>}
           </div>
         </div>
       </nav>
