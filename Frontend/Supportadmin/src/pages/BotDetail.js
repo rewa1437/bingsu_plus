@@ -1,10 +1,29 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { HiArrowLeft } from 'react-icons/hi';
+import { botListRaw } from '../data/botsData';
 
 function BotDetail() {
   const navigate = useNavigate();
   const location = useLocation();
   const bot = location.state?.bot;
+
+  // Groups data for mapping group IDs to names
+  const groupsData = [
+    { id: 1, name: 'พพอ.', description: 'กลุ่มงานหลัก' },
+    { id: 2, name: 'บิงชู', description: 'กลุ่มฝ่ายขาย' },
+    { id: 3, name: 'ถั่วแระ', description: 'กลุ่มดูแลลูกค้า' },
+    { id: 4, name: 'อชจ.', description: 'กลุ่มทดสอบระบบ' },
+    { id: 5, name: 'บักอะ', description: 'กลุ่มสำรอง' }
+  ];
+
+  // Get group names from IDs
+  const getGroupNames = (groupIds) => {
+    if (!groupIds || !Array.isArray(groupIds)) return [];
+    return groupIds.map(id => {
+      const group = groupsData.find(g => g.id === id);
+      return group ? group.name : `Group ${id}`;
+    });
+  };
 
   // Default bot data if none provided
   const botData = {
@@ -21,8 +40,8 @@ Patient and calm
 Encouraging, not judgmental
 Speak like a real art mentor
 Explain things in simple language`,
-    knowledge: ['Support.pdf', 'BingSu.pdf', 'how to use.txt'],
-    groups: ['กลุ่ม 1', 'กลุ่ม อบต.']
+    knowledge: bot?.knowledge || [],
+    groups: getGroupNames(bot?.groups)
   };
 
   const handleBack = () => {
@@ -98,14 +117,18 @@ Explain things in simple language`,
             ความรู้
           </label>
           <div className='flex flex-wrap gap-2'>
-            {botData.knowledge.map((item, index) => (
-              <span
-                key={index}
-                className='inline-flex items-center px-4 py-2 bg-yellow-400 text-gray-800 rounded-full text-sm font-medium'
-              >
-                {item}
-              </span>
-            ))}
+            {botData.knowledge && botData.knowledge.length > 0 ? (
+              botData.knowledge.map((item, index) => (
+                <span
+                  key={index}
+                  className='inline-flex items-center px-4 py-2 bg-yellow-400 text-gray-800 rounded-full text-sm font-medium'
+                >
+                  {item}
+                </span>
+              ))
+            ) : (
+              <span className='text-gray-500 text-sm'>ไม่มีข้อมูล</span>
+            )}
           </div>
         </div>
 
@@ -115,14 +138,18 @@ Explain things in simple language`,
             กลุ่ม
           </label>
           <div className='flex flex-wrap gap-2'>
-            {botData.groups.map((group, index) => (
-              <span
-                key={index}
-                className='inline-flex items-center px-4 py-2 bg-yellow-400 text-gray-800 rounded-full text-sm font-medium'
-              >
-                {group}
-              </span>
-            ))}
+            {botData.groups && botData.groups.length > 0 ? (
+              botData.groups.map((group, index) => (
+                <span
+                  key={index}
+                  className='inline-flex items-center px-4 py-2 bg-yellow-400 text-gray-800 rounded-full text-sm font-medium'
+                >
+                  {group}
+                </span>
+              ))
+            ) : (
+              <span className='text-gray-500 text-sm'>ไม่มีข้อมูล</span>
+            )}
           </div>
         </div>
       </div>

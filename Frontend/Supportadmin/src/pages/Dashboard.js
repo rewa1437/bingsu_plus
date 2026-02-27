@@ -38,14 +38,19 @@ import {
 } from 'recharts';
 import { botListRaw } from '../data/botsData';
 import { knowledgeListRaw } from '../data/knowledgeData';
-import { supportUsersRaw } from '../data/supportUsersData';
 
 // Mock data for dashboard metrics
 const mockDashboardData = {
+  // Overall stats - All filter
+  totalBots: 17,
+  totalKnowledge: 18,
+  totalUsers: 23,
+  usersExpiringSoon: 9,
+  usersPendingApproval: 18,
   dailyUsers: {
-    today: 1247,
-    yesterday: 1189,
-    change: 4.9
+    today: 16,
+    yesterday: 14,
+    change: 14.3
   },
   tokenUsage: {
     today: 2458934,
@@ -54,13 +59,13 @@ const mockDashboardData = {
   },
   // 7 days data for charts
   dailyUsersChart: [
-    { date: '6 วันก่อน', users: 1123 },
-    { date: '5 วันก่อน', users: 1156 },
-    { date: '4 วันก่อน', users: 1189 },
-    { date: '3 วันก่อน', users: 1201 },
-    { date: '2 วันก่อน', users: 1198 },
-    { date: 'เมื่อวาน', users: 1189 },
-    { date: 'วันนี้', users: 1247 }
+    { date: '6 วันก่อน', users: 12 },
+    { date: '5 วันก่อน', users: 13 },
+    { date: '4 วันก่อน', users: 14 },
+    { date: '3 วันก่อน', users: 15 },
+    { date: '2 วันก่อน', users: 15 },
+    { date: 'เมื่อวาน', users: 14 },
+    { date: 'วันนี้', users: 16 }
   ],
   tokenUsageChart: [
     { date: '6 วันก่อน', tokens: 2100456 },
@@ -120,7 +125,12 @@ const mockDashboardData = {
   },
   // User-specific data
   userData: {
-    totalGroups: 24,
+    totalBots: 17,
+    totalKnowledge: 18,
+    totalUsers: 23,
+    totalGroups: 5,
+    usersExpiringSoon: 9,
+    usersPendingApproval: 18,
     dailyUsers: {
       today: 856,
       yesterday: 812,
@@ -132,13 +142,13 @@ const mockDashboardData = {
       change: 6.5
     },
     dailyUsersChart: [
-      { date: '6 วันก่อน', users: 756 },
-      { date: '5 วันก่อน', users: 789 },
-      { date: '4 วันก่อน', users: 812 },
-      { date: '3 วันก่อน', users: 823 },
-      { date: '2 วันก่อน', users: 818 },
-      { date: 'เมื่อวาน', users: 812 },
-      { date: 'วันนี้', users: 856 }
+      { date: '6 วันก่อน', users: 12 },
+      { date: '5 วันก่อน', users: 13 },
+      { date: '4 วันก่อน', users: 14 },
+      { date: '3 วันก่อน', users: 15 },
+      { date: '2 วันก่อน', users: 15 },
+      { date: 'เมื่อวาน', users: 14 },
+      { date: 'วันนี้', users: 16 }
     ],
     tokenUsageChart: [
       { date: '6 วันก่อน', tokens: 1567890 },
@@ -152,10 +162,15 @@ const mockDashboardData = {
   },
   // System-specific data
   systemData: {
+    totalBots: 17,
+    totalKnowledge: 18,
+    totalUsers: 23,
+    usersExpiringSoon: 9,
+    usersPendingApproval: 18,
     dailyUsers: {
-      today: 391,
-      yesterday: 377,
-      change: 3.7
+      today: 16,
+      yesterday: 14,
+      change: 14.3
     },
     tokenUsage: {
       today: 635478,
@@ -183,14 +198,14 @@ const mockDashboardData = {
   }
 };
 
-const COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899'];
+const COLORS = ['#F5C200', '#F5D547', '#F0A500', '#8B8680', '#A89A91', '#6B6560'];
 const GRADIENT_COLORS = {
-  blue: ['#3B82F6', '#1D4ED8'],
-  purple: ['#8B5CF6', '#6D28D9'],
-  green: ['#10B981', '#059669'],
-  orange: ['#F59E0B', '#D97706'],
-  indigo: ['#6366F1', '#4F46E5'],
-  red: ['#EF4444', '#DC2626']
+  sandy: ['#F5C200', '#8B8680'],
+  gold: ['#F5C200', '#8B8680'],
+  tan: ['#F5C200', '#8B8680'],
+  warmgray: ['#F5C200', '#8B8680'],
+  light: ['#F5C200', '#8B8680'],
+  pale: ['#F5C200', '#8B8680']
 };
 
 // Animated Counter Component
@@ -262,27 +277,40 @@ const Sparkline = ({ data, color = '#3B82F6', height = 40 }) => {
   );
 };
 
-function Dashboard() {
+function Dashboard({ users = [], groups = [] }) {
   const [isVisible, setIsVisible] = useState(false);
-  const [filter, setFilter] = useState('all'); // 'all', 'user', 'system'
+  const [filter, setFilter] = useState('system'); // 'all', 'user', 'system'
+  const dailyUsersChartRef = React.useRef(null);
+  const tokenUsageChartRef = React.useRef(null);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
+  const scrollToChart = (ref) => {
+    if (ref?.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   // Calculate metrics from existing data
   const metrics = useMemo(() => {
-    const totalBots = botListRaw.length;
-    const totalKnowledge = knowledgeListRaw.length;
-    const totalUsers = supportUsersRaw.length;
+    // Use users props if available, otherwise fall back to empty array
+    const userList = users && users.length > 0 ? users : [];
+    const groupList = groups && groups.length > 0 ? groups : [];
     
-    // Calculate users expiring soon (within 30 days)
+    // Calculate actual user statistics from userList
+    const totalUsers = userList.filter(user => user.roleType === 'user' && user.isEnabled).length;
+    const usersPendingApproval = userList.filter(user => user.roleType === 'pending').length;
+    const usersInactivated = userList.filter(user => user.roleType === 'user' && !user.isEnabled).length;
+    
+    // Calculate users expiring soon (within 7 days)
     const today = new Date();
-    const thirtyDaysFromNow = new Date(today);
-    thirtyDaysFromNow.setDate(today.getDate() + 30);
+    const sevenDaysFromNow = new Date(today);
+    sevenDaysFromNow.setDate(today.getDate() + 7);
     
-    const usersExpiringSoon = supportUsersRaw.filter(user => {
-      if (!user.expiresAt) return false;
+    const usersExpiringSoon = userList.filter(user => {
+      if (!user.expiresAt || user.expiresAt === '-') return false;
       const dateStr = user.expiresAt;
       const monthMap = {
         'มกราคม': 0, 'กุมภาพันธ์': 1, 'มีนาคม': 2, 'เมษายน': 3,
@@ -298,14 +326,33 @@ function Dashboard() {
         
         if (month !== undefined && !isNaN(day) && !isNaN(year)) {
           const expireDate = new Date(year, month, day);
-          return expireDate >= today && expireDate <= thirtyDaysFromNow;
+          return expireDate >= today && expireDate <= sevenDaysFromNow;
         }
       }
       return false;
     }).length;
+    
+    // Count total accounts (all roles)
+    const totalAccounts = userList.length;
+    
+    // Count user role accounts
+    const userRoleCount = userList.filter(user => user.roleType === 'user').length;
 
-    // Calculate users pending approval
-    const usersPendingApproval = supportUsersRaw.filter(user => user.roleType === 'pending').length;
+    // Get values from mock data based on filter
+    let mockData;
+    if (filter === 'user') {
+      mockData = mockDashboardData.userData;
+    } else if (filter === 'system') {
+      mockData = mockDashboardData.systemData;
+    } else {
+      mockData = mockDashboardData;
+    }
+
+    const totalBots = mockData.totalBots;
+    const totalKnowledge = mockData.totalKnowledge;
+    const totalGroups = groupList.length; // Calculate from actual groups array
+    const totalIntegrationLines = mockDashboardData.botIntegrations.totalIntegrationLines;
+    const totalWidgets = mockDashboardData.botIntegrations.totalWidgets;
 
     // Filter data based on selected filter
     let dailyUsers, tokenUsage, dailyUsersChart, tokenUsageChart;
@@ -327,19 +374,18 @@ function Dashboard() {
       tokenUsageChart = mockDashboardData.tokenUsageChart;
     }
 
-    const totalGroups = filter !== 'system' ? mockDashboardData.userData.totalGroups : null;
-    const totalIntegrationLines = mockDashboardData.botIntegrations.totalIntegrationLines;
-    const totalWidgets = mockDashboardData.botIntegrations.totalWidgets;
-
     return {
       totalBots,
       totalKnowledge,
       totalUsers,
+      totalAccounts,
+      userRoleCount,
       totalGroups,
       totalIntegrationLines,
       totalWidgets,
       usersExpiringSoon,
       usersPendingApproval,
+      usersInactivated,
       dailyUsers,
       tokenUsage,
       dailyUsersChart,
@@ -351,7 +397,7 @@ function Dashboard() {
       systemStatus: mockDashboardData.systemStatus,
       weekComparison: mockDashboardData.weekComparison
     };
-  }, [filter]);
+  }, [filter, users, groups]);
 
   const StatCard = ({ 
     title, 
@@ -360,35 +406,49 @@ function Dashboard() {
     change, 
     changeType, 
     subtitle, 
-    iconColor = 'bg-blue-500',
+    iconColor = 'bg-[#F5C200]',
     gradient = ['#3B82F6', '#1D4ED8'],
     sparklineData,
-    delay = 0
+    delay = 0,
+    onCardClick = null,
+    bgColor = 'bg-white'
   }) => {
     const [isHovered, setIsHovered] = useState(false);
     
     return (
       <div 
-        className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 ${
+        className={`${bgColor} rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         }`}
         style={{ transitionDelay: `${delay}ms` }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={onCardClick}
       >
         <div className="relative overflow-hidden">
-          {/* Gradient Background */}
+          {/* Solid Color Background */}
           <div 
             className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10 blur-3xl transition-all duration-500"
             style={{ 
-              background: `linear-gradient(135deg, ${gradient[0]}, ${gradient[1]})`,
+              background: gradient[0],
               transform: isHovered ? 'scale(1.5)' : 'scale(1)'
             }}
           />
           
-          <div className="relative flex items-start justify-between">
-            <div className="flex-1 z-10">
-              <p className="text-sm font-medium text-gray-600 mb-2">{title}</p>
+          <div className="relative">
+            {/* Icon + Title Section */}
+            <div className="flex items-center gap-2 mb-3">
+              <div 
+                className="rounded-lg p-2 transition-all duration-300"
+                style={{ background: gradient[0] }}
+              >
+                <Icon className="text-white text-lg" />
+              </div>
+              <p className="text-base font-bold text-gray-800">{title}</p>
+            </div>
+            
+            {/* Value Section */}
+            <div className="ml-10">
               <p className="text-4xl font-bold text-gray-900 mb-2">
                 <AnimatedCounter value={value} />
               </p>
@@ -396,39 +456,29 @@ function Dashboard() {
                 <p className="text-xs text-gray-500 mb-3">{subtitle}</p>
               )}
               {change !== undefined && (
-                <div className={`flex items-center gap-1 ${changeType === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`flex items-center gap-1 ${changeType === 'up' ? 'text-[#F5C200]' : 'text-[#8B8680]'}`}>
                   {changeType === 'up' ? (
                     <HiArrowUp className="text-sm" />
                   ) : (
                     <HiArrowDown className="text-sm" />
                   )}
                   <span className="text-sm font-semibold">{Math.abs(change)}%</span>
-                  <span className="text-xs text-gray-500 ml-1">จากเมื่อวาน</span>
+                  <span className="text-sm text-gray-500 ml-1">จากเมื่อวาน</span>
                 </div>
               )}
             </div>
-            <div 
-              className={`${iconColor} rounded-xl p-4 shadow-lg transform transition-all duration-300 ${
-                isHovered ? 'scale-110 rotate-3' : 'scale-100'
-              }`}
-              style={{
-                background: `linear-gradient(135deg, ${gradient[0]}, ${gradient[1]})`
-              }}
-            >
-              <Icon className="text-white text-3xl" />
-            </div>
+            
+            {/* Sparkline */}
+            {sparklineData && (
+              <div className="mt-4 h-12">
+                <Sparkline 
+                  data={sparklineData} 
+                  color={gradient[0]}
+                  height={48}
+                />
+              </div>
+            )}
           </div>
-          
-          {/* Sparkline */}
-          {sparklineData && (
-            <div className="mt-4 h-12">
-              <Sparkline 
-                data={sparklineData} 
-                color={gradient[0]}
-                height={48}
-              />
-            </div>
-          )}
         </div>
       </div>
     );
@@ -453,16 +503,16 @@ function Dashboard() {
   };
 
   return (
-    <div className="w-full h-full  p-6 min-h-screen">
+    <div className="w-full h-full p-6 min-h-screen">
       {/* Header with Animation */}
       <div className={`mb-8 transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-3 shadow-lg">
+            <div className="bg-[#8B8680] rounded-xl p-3 shadow-lg">
               <HiSparkles className="text-white text-3xl" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold text-[#8B8680]">
                 Dashboard
               </h1>
               <p className="text-sm text-gray-600 mt-1">ภาพรวมระบบและสถิติการใช้งานแบบ Real-time</p>
@@ -470,12 +520,12 @@ function Dashboard() {
           </div>
           
           {/* Filter Tabs */}
-          <div className="flex items-center gap-2 bg-white rounded-xl p-1 shadow-lg border border-gray-200">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setFilter('all')}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${
                 filter === 'all'
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
+                  ? 'bg-[#8B8680] text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
@@ -485,7 +535,7 @@ function Dashboard() {
               onClick={() => setFilter('user')}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${
                 filter === 'user'
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
+                  ? 'bg-[#8B8680] text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
@@ -496,7 +546,7 @@ function Dashboard() {
               onClick={() => setFilter('system')}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${
                 filter === 'system'
-                  ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-md'
+                  ? 'bg-[#8B8680] text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
@@ -510,17 +560,115 @@ function Dashboard() {
       {/* Main Statistics Grid - Hide when System filter */}
       {filter !== 'system' && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+        {/* User Accounts Consolidated Card */}
+        <div 
+          className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}
+          style={{ transitionDelay: '0ms' }}
+        >
+          <div className="relative overflow-hidden">
+            <div 
+              className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10 blur-3xl transition-all duration-500"
+              style={{ 
+                background: `#F5C200`,
+                transform: 'scale(1)'
+              }}
+            />
+            <div className="relative">
+              {/* Title with Icon */}
+              <div className="flex items-center gap-2 mb-4">
+                <div 
+                  className="rounded-lg p-2"
+                  style={{ background: `#F5C200` }}
+                >
+                  <HiUsers className="text-white text-lg" />
+                </div>
+                <h3 className="text-base font-bold text-gray-800">บัญชี User</h3>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                  <span className="text-xs text-gray-600">บัญชีทั้งหมด</span>
+                  <span className="text-xl font-bold text-gray-900">
+                    <AnimatedCounter value={metrics.totalAccounts} />
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                  <span className="text-xs text-gray-600">ผู้ใช้งาน</span>
+                  <span className="text-xl font-bold text-[#8B8680]">
+                    <AnimatedCounter value={metrics.userRoleCount} />
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600">รอดำเนินการ</span>
+                  <span className="text-xl font-bold text-[#F5C200]">
+                    <AnimatedCounter value={metrics.usersPendingApproval} />
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* User Status Consolidated Card */}
+        <div 
+          className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}
+          style={{ transitionDelay: '100ms' }}
+        >
+          <div className="relative overflow-hidden">
+            <div 
+              className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10 blur-3xl transition-all duration-500"
+              style={{ 
+                background: `#8B8680`,
+                transform: 'scale(1)'
+              }}
+            />
+            <div className="relative">
+              {/* Title with Icon */}
+              <div className="flex items-center gap-2 mb-4">
+                <div 
+                  className="rounded-lg p-2"
+                  style={{ background: `#8B8680` }}
+                >
+                  <HiExclamationCircle className="text-white text-lg" />
+                </div>
+                <h3 className="text-base font-bold text-gray-800">สถานะ User</h3>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                  <span className="text-xs text-gray-600">หมดอายุใน 7 วัน</span>
+                  <span className="text-xl font-bold text-[#8B8680]">
+                    <AnimatedCounter value={metrics.usersExpiringSoon} />
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600">ถูก Inactivate</span>
+                  <span className="text-xl font-bold text-gray-600">
+                    <AnimatedCounter value={metrics.usersInactivated} />
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <StatCard
-          title="จำนวนผู้ใช้ต่อวัน"
+          title="จำนวนผู้ใช้เว็บไซต์ BingSu ต่อวัน"
           value={metrics.dailyUsers.today}
           icon={HiUsers}
           change={metrics.dailyUsers.change}
           changeType="up"
           subtitle="ผู้ใช้ที่ใช้งานวันนี้"
-          iconColor="bg-blue-500"
-          gradient={GRADIENT_COLORS.blue}
+          iconColor="bg-[#F5C200]"
+          gradient={GRADIENT_COLORS.sandy}
           sparklineData={metrics.dailyUsersChart.map(d => d.users)}
-          delay={0}
+          delay={200}
+          bgColor="bg-white"
+          onCardClick={() => scrollToChart(dailyUsersChartRef)}
         />
         <StatCard
           title="ยอดใช้งาน Token วันนี้"
@@ -529,149 +677,124 @@ function Dashboard() {
           change={metrics.tokenUsage.change}
           changeType="up"
           subtitle="Token ที่ใช้ไปทั้งหมด"
-          iconColor="bg-purple-500"
-          gradient={GRADIENT_COLORS.purple}
+          iconColor="bg-[#8B8680]"
+          gradient={['#8B8680', '#8B8680']}
           sparklineData={metrics.tokenUsageChart.map(d => d.tokens / 10000)}
-          delay={100}
+          bgColor="bg-white"
+          delay={300}
+          onCardClick={() => scrollToChart(tokenUsageChartRef)}
         />
         {/* Combined Bot and Knowledge Card */}
         <div 
           className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
-          style={{ transitionDelay: '200ms' }}
+          style={{ transitionDelay: '400ms' }}
         >
           <div className="relative overflow-hidden">
             <div 
               className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10 blur-3xl transition-all duration-500"
               style={{ 
-                background: `linear-gradient(135deg, ${GRADIENT_COLORS.green[0]}, ${GRADIENT_COLORS.green[1]})`,
+                background: `#F5C200`,
                 transform: 'scale(1)'
               }}
             />
-            <div className="relative flex items-start justify-between">
-              <div className="flex-1 z-10">
-                <p className="text-sm font-medium text-gray-600 mb-2">จำนวน Bot & Knowledge</p>
-                <div className="space-y-2 mb-2">
-                  <div className="flex items-center gap-3">
-                    <HiDesktopComputer className="text-green-600 text-xl" />
-                    <div>
-                      <p className="text-3xl font-bold text-gray-900">
-                        <AnimatedCounter value={metrics.totalBots} />
-                      </p>
-                      <p className="text-xs text-gray-500">Bot ทั้งหมดในระบบ</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <HiBookOpen className="text-orange-600 text-xl" />
-                    <div>
-                      <p className="text-3xl font-bold text-gray-900">
-                        <AnimatedCounter value={metrics.totalKnowledge} />
-                      </p>
-                      <p className="text-xs text-gray-500">Knowledge Base ทั้งหมด</p>
-                    </div>
-                  </div>
+            <div className="relative">
+              {/* Title with Icon */}
+              <div className="flex items-center gap-2 mb-4">
+                <div 
+                  className="rounded-lg p-2"
+                  style={{ background: `#F5C200` }}
+                >
+                  <HiDesktopComputer className="text-white text-lg" />
                 </div>
+                <h3 className="text-base font-bold text-gray-800">จำนวน Bot & Knowledge</h3>
               </div>
-              <div 
-                className="bg-green-500 rounded-xl p-4 shadow-lg transform transition-all duration-300 scale-100"
-                style={{ background: `linear-gradient(135deg, ${GRADIENT_COLORS.green[0]}, ${GRADIENT_COLORS.green[1]})` }}
-              >
-                <HiDesktopComputer className="text-white text-3xl" />
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <HiDesktopComputer className="text-[#8B8680] text-base" />
+                    <span className="text-xs text-gray-600">Bot ทั้งหมด</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">
+                    <AnimatedCounter value={metrics.totalBots} />
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <HiBookOpen className="text-[#F5C200] text-base" />
+                    <span className="text-xs text-gray-600">Knowledge Base</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">
+                    <AnimatedCounter value={metrics.totalKnowledge} />
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
+
         {/* Integration Card */}
         <div 
           className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
-          style={{ transitionDelay: '300ms' }}
+          style={{ transitionDelay: '500ms' }}
         >
           <div className="relative overflow-hidden">
             <div 
               className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10 blur-3xl transition-all duration-500"
               style={{ 
-                background: `linear-gradient(135deg, ${GRADIENT_COLORS.indigo[0]}, ${GRADIENT_COLORS.indigo[1]})`,
+                background: `#8B8680`,
                 transform: 'scale(1)'
               }}
             />
-            <div className="relative flex items-start justify-between">
-              <div className="flex-1 z-10">
-                <p className="text-sm font-medium text-gray-600 mb-2">Integration</p>
-                <div className="space-y-2 mb-2">
-                  <div className="flex items-center gap-3">
-                    <HiLink className="text-blue-600 text-xl" />
-                    <div>
-                      <p className="text-3xl font-bold text-gray-900">
-                        <AnimatedCounter value={metrics.totalIntegrationLines} />
-                      </p>
-                      <p className="text-xs text-gray-500">Integration Line ที่เชื่อมต่อ</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <HiGlobe className="text-purple-600 text-xl" />
-                    <div>
-                      <p className="text-3xl font-bold text-gray-900">
-                        <AnimatedCounter value={metrics.totalWidgets} />
-                      </p>
-                      <p className="text-xs text-gray-500">Widget ที่เชื่อมต่อ</p>
-                    </div>
-                  </div>
+            <div className="relative">
+              {/* Title with Icon */}
+              <div className="flex items-center gap-2 mb-4">
+                <div 
+                  className="rounded-lg p-2"
+                  style={{ background: `#8B8680` }}
+                >
+                  <HiLink className="text-white text-lg" />
                 </div>
+                <h3 className="text-base font-bold text-gray-800">Integration</h3>
               </div>
-              <div 
-                className="bg-indigo-500 rounded-xl p-4 shadow-lg transform transition-all duration-300 scale-100"
-                style={{ background: `linear-gradient(135deg, ${GRADIENT_COLORS.indigo[0]}, ${GRADIENT_COLORS.indigo[1]})` }}
-              >
-                <HiLink className="text-white text-3xl" />
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <HiLink className="text-[#8B8680] text-base" />
+                    <span className="text-xs text-gray-600">Integration Line</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">
+                    <AnimatedCounter value={metrics.totalIntegrationLines} />
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <HiGlobe className="text-[#F5C200] text-base" />
+                    <span className="text-xs text-gray-600">Widget</span>
+                  </div>
+                  <p className="text-xl font-bold text-gray-900">
+                    <AnimatedCounter value={metrics.totalWidgets} />
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
         <StatCard
-          title="จำนวน User"
-          value={metrics.totalUsers}
-          icon={HiUserGroup}
-          subtitle="ผู้ใช้งานทั้งหมด"
-          iconColor="bg-indigo-500"
-          gradient={GRADIENT_COLORS.indigo}
-          delay={400}
-        />
-        <StatCard
-          title="User ที่ใกล้หมดอายุ"
-          value={metrics.usersExpiringSoon}
-          icon={HiExclamationCircle}
-          subtitle="หมดอายุภายใน 30 วัน"
-          iconColor="bg-red-500"
-          gradient={GRADIENT_COLORS.red}
-          delay={500}
-        />
-        {/* Group Card - Show for All and User filter */}
-        {filter !== 'system' && metrics.totalGroups !== null && (
-        <StatCard
           title="จำนวน Group"
           value={metrics.totalGroups}
           icon={HiUserGroup}
           subtitle="Group ทั้งหมด"
-          iconColor="bg-teal-500"
-          gradient={['#14B8A6', '#0D9488']}
+          iconColor="bg-[#F5C200]"
+          gradient={GRADIENT_COLORS.pale}
           delay={600}
+          bgColor="bg-white"
         />
-        )}
-        {/* Users Pending Approval Card - Show for All and User filter */}
-        {filter !== 'system' && (
-        <StatCard
-          title="User ที่รอ Approve"
-          value={metrics.usersPendingApproval}
-          icon={HiClock}
-          subtitle="รอการอนุมัติ"
-          iconColor="bg-amber-500"
-          gradient={['#F59E0B', '#D97706']}
-          delay={700}
-        />
-        )}
       </div>
       )}
 
@@ -679,28 +802,31 @@ function Dashboard() {
       {filter !== 'system' && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Daily Users Line Chart */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300">
+        <div 
+          ref={dailyUsersChartRef}
+          className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300"
+        >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-3 shadow-lg">
+              <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
                 <HiUsers className="text-white text-2xl" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-800">แนวโน้มผู้ใช้งานรายวัน</h3>
-                <p className="text-xs text-gray-600">7 วันล่าสุด</p>
+                <h3 className="text-2xl font-bold text-gray-800">แนวโน้มผู้ใช้งานรายวัน</h3>
+                <p className="text-sm text-gray-600">7 วันล่าสุด</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full">
-              <HiTrendingUp className="text-green-600" />
-              <span className="text-sm font-semibold text-green-600">+{metrics.dailyUsers.change}%</span>
+            <div className="flex items-center gap-2 bg-[#F2E9DA] px-3 py-1 rounded-full">
+              <HiTrendingUp className="text-[#8B8680]" />
+              <span className="text-sm font-semibold text-[#8B8680]">+{metrics.dailyUsers.change}%</span>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={320}>
             <LineChart data={metrics.dailyUsersChart}>
               <defs>
                 <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
+                  <stop offset="5%" stopColor="#F5C200" stopOpacity={1}/>
+                  <stop offset="95%" stopColor="#F5C200" stopOpacity={1}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.5} />
@@ -720,10 +846,10 @@ function Dashboard() {
                 type="monotone" 
                 dataKey="users" 
                 name="จำนวนผู้ใช้"
-                stroke="#3B82F6" 
+                stroke="#B8A878" 
                 strokeWidth={3}
-                dot={{ fill: '#3B82F6', r: 5, strokeWidth: 2, stroke: '#fff' }}
-                activeDot={{ r: 8, stroke: '#3B82F6', strokeWidth: 2 }}
+                dot={{ fill: '#B8A878', r: 5, strokeWidth: 2, stroke: '#fff' }}
+                activeDot={{ r: 8, stroke: '#B8A878', strokeWidth: 2 }}
                 fill="url(#colorUsers)"
               />
             </LineChart>
@@ -731,28 +857,31 @@ function Dashboard() {
         </div>
 
         {/* Token Usage Area Chart */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300">
+        <div 
+          ref={tokenUsageChartRef}
+          className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300"
+        >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-3 shadow-lg">
+              <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
                 <HiKey className="text-white text-2xl" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-800">การใช้ Token รายวัน</h3>
-                <p className="text-xs text-gray-600">7 วันล่าสุด</p>
+                <h3 className="text-2xl font-bold text-gray-800">การใช้ Token รายวัน</h3>
+                <p className="text-sm text-gray-600">7 วันล่าสุด</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-purple-50 px-3 py-1 rounded-full">
-              <HiLightningBolt className="text-purple-600" />
-              <span className="text-sm font-semibold text-purple-600">+{metrics.tokenUsage.change}%</span>
+            <div className="flex items-center gap-2 bg-[#F2E9DA] px-3 py-1 rounded-full">
+              <HiLightningBolt className="text-[#8B8680]" />
+              <span className="text-sm font-semibold text-[#8B8680]">+{metrics.tokenUsage.change}%</span>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={320}>
             <AreaChart data={metrics.tokenUsageChart}>
               <defs>
                 <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.1}/>
+                  <stop offset="5%" stopColor="#F5C200" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="#F5C200" stopOpacity={0.05}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.5} />
@@ -773,7 +902,7 @@ function Dashboard() {
                 type="monotone" 
                 dataKey="tokens" 
                 name="Token"
-                stroke="#8B5CF6" 
+                stroke="#F5C200" 
                 fillOpacity={1}
                 fill="url(#colorTokens)"
                 strokeWidth={3}
@@ -790,12 +919,12 @@ function Dashboard() {
         {/* User Role Distribution Pie Chart */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center gap-3 mb-6">
-            <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-3 shadow-lg">
+            <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
               <HiUserGroup className="text-white text-2xl" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-800">การกระจายบทบาทผู้ใช้</h3>
-              <p className="text-xs text-gray-600">จำนวนผู้ใช้ตามบทบาท</p>
+              <h3 className="text-2xl font-bold text-gray-800">การกระจายบทบาทผู้ใช้</h3>
+              <p className="text-sm text-gray-600">จำนวนผู้ใช้ตามบทบาท</p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={320}>
@@ -829,12 +958,12 @@ function Dashboard() {
         {/* Frequently Asked Questions Bar Chart */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center gap-3 mb-6">
-            <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl p-3 shadow-lg">
+            <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
               <HiQuestionMarkCircle className="text-white text-2xl" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-800">ประเภทคำถามที่พบบ่อย</h3>
-              <p className="text-xs text-gray-600">จำนวนคำถามตามประเภท</p>
+              <h3 className="text-2xl font-bold text-gray-800">ประเภทคำถามที่พบบ่อย</h3>
+              <p className="text-sm text-gray-600">จำนวนคำถามตามประเภท</p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={320}>
@@ -845,8 +974,8 @@ function Dashboard() {
             >
               <defs>
                 <linearGradient id="barGradient" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#3B82F6" stopOpacity={1}/>
-                  <stop offset="100%" stopColor="#1D4ED8" stopOpacity={1}/>
+                  <stop offset="0%" stopColor="#F5C200" stopOpacity={1}/>
+                  <stop offset="100%" stopColor="#F5C200" stopOpacity={1}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.5} />
@@ -883,24 +1012,24 @@ function Dashboard() {
       {filter !== 'system' && (
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8 hover:shadow-2xl transition-all duration-300">
         <div className="flex items-center gap-3 mb-6">
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-3 shadow-lg">
+          <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
             <HiLightningBolt className="text-white text-2xl" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-gray-800">กิจกรรมรายชั่วโมง</h3>
-            <p className="text-xs text-gray-600">การใช้งานตามช่วงเวลา</p>
+            <h3 className="text-2xl font-bold text-gray-800">กิจกรรมรายชั่วโมง</h3>
+            <p className="text-sm text-gray-600">การใช้งานตามช่วงเวลา</p>
           </div>
         </div>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={metrics.hourlyActivity}>
             <defs>
               <linearGradient id="userGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#10B981" stopOpacity={0.2}/>
+                <stop offset="5%" stopColor="#F5C200" stopOpacity={1}/>
+                <stop offset="95%" stopColor="#F5C200" stopOpacity={1}/>
               </linearGradient>
               <linearGradient id="tokenGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.2}/>
+                <stop offset="5%" stopColor="#8B8680" stopOpacity={1}/>
+                <stop offset="95%" stopColor="#8B8680" stopOpacity={1}/>
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.5} />
@@ -940,21 +1069,21 @@ function Dashboard() {
         {filter !== 'user' && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center gap-3 mb-6">
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-3 shadow-lg">
+            <div className="bg-[#10B981] rounded-xl p-3 shadow-lg">
               <HiCheckCircle className="text-white text-2xl" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-800">สถานะระบบ</h3>
-              <p className="text-xs text-gray-600">System Health</p>
+              <h3 className="text-2xl font-bold text-gray-800">สถานะระบบ</h3>
+              <p className="text-sm text-gray-600">System Health</p>
             </div>
           </div>
-          <div className="space-y-4 overflow-y-auto pr-2" style={{ maxHeight: 'calc(3 * (120px + 16px))' }}>
-            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-[#F0FDF4] rounded-xl border border-[#D1FAE5]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-800">API Status</span>
                 <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  <span className="text-xs font-semibold text-green-600">Healthy</span>
+                  <span className="w-2 h-2 bg-[#10B981] rounded-full animate-pulse"></span>
+                  <span className="text-xs font-semibold text-[#059669]">Healthy</span>
                 </span>
               </div>
               <div className="text-xs text-gray-600 space-y-1">
@@ -962,12 +1091,12 @@ function Dashboard() {
                 <p>Response Time: {metrics.systemStatus.api.responseTime}</p>
               </div>
             </div>
-            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+            <div className="p-4 bg-[#F0FDF4] rounded-xl border border-[#D1FAE5]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-800">Database</span>
                 <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  <span className="text-xs font-semibold text-green-600">Healthy</span>
+                  <span className="w-2 h-2 bg-[#10B981] rounded-full animate-pulse"></span>
+                  <span className="text-xs font-semibold text-[#059669]">Healthy</span>
                 </span>
               </div>
               <div className="text-xs text-gray-600 space-y-1">
@@ -975,12 +1104,12 @@ function Dashboard() {
                 <p>Response Time: {metrics.systemStatus.database.responseTime}</p>
               </div>
             </div>
-            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+            <div className="p-4 bg-[#F0FDF4] rounded-xl border border-[#D1FAE5]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-800">Storage</span>
                 <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  <span className="text-xs font-semibold text-green-600">Healthy</span>
+                  <span className="w-2 h-2 bg-[#10B981] rounded-full animate-pulse"></span>
+                  <span className="text-xs font-semibold text-[#059669]">Healthy</span>
                 </span>
               </div>
               <div className="text-xs text-gray-600 space-y-1">
@@ -990,12 +1119,12 @@ function Dashboard() {
             </div>
             
             {/* AI Status */}
-            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+            <div className="p-4 bg-[#F0FDF4] rounded-xl border border-[#D1FAE5]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-800">AI Service</span>
                 <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  <span className="text-xs font-semibold text-green-600">Healthy</span>
+                  <span className="w-2 h-2 bg-[#10B981] rounded-full animate-pulse"></span>
+                  <span className="text-xs font-semibold text-[#059669]">Healthy</span>
                 </span>
               </div>
               <div className="text-xs text-gray-600 space-y-1">
@@ -1007,12 +1136,12 @@ function Dashboard() {
             </div>
             
             {/* OCR Status */}
-            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+            <div className="p-4 bg-[#F0FDF4] rounded-xl border border-[#D1FAE5]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-800">OCR Service</span>
                 <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  <span className="text-xs font-semibold text-green-600">Healthy</span>
+                  <span className="w-2 h-2 bg-[#10B981] rounded-full animate-pulse"></span>
+                  <span className="text-xs font-semibold text-[#059669]">Healthy</span>
                 </span>
               </div>
               <div className="text-xs text-gray-600 space-y-1">
@@ -1024,12 +1153,12 @@ function Dashboard() {
             </div>
             
             {/* Server Status */}
-            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+            <div className="p-4 bg-[#F0FDF4] rounded-xl border border-[#D1FAE5]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-800">Server</span>
                 <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  <span className="text-xs font-semibold text-green-600">Healthy</span>
+                  <span className="w-2 h-2 bg-[#10B981] rounded-full animate-pulse"></span>
+                  <span className="text-xs font-semibold text-[#059669]">Healthy</span>
                 </span>
               </div>
               <div className="text-xs text-gray-600 space-y-1">
@@ -1047,19 +1176,19 @@ function Dashboard() {
         {filter !== 'system' && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center gap-3 mb-6">
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-3 shadow-lg">
+            <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
               <HiTrendingUp className="text-white text-2xl" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-800">เปรียบเทียบรายสัปดาห์</h3>
-              <p className="text-xs text-gray-600">Week over Week</p>
+              <h3 className="text-2xl font-bold text-gray-800">เปรียบเทียบรายสัปดาห์</h3>
+              <p className="text-sm text-gray-600">Week over Week</p>
             </div>
           </div>
           <div className="space-y-4">
-            <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+            <div className="p-4 bg-[#FFFAF0] rounded-xl border border-[#F5E5B8]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-800">ผู้ใช้</span>
-                <span className="flex items-center gap-1 text-green-600">
+                <span className="flex items-center gap-1 text-[#F5C200]">
                   <HiArrowUp className="text-sm" />
                   <span className="text-sm font-bold">+{metrics.weekComparison.users.change}%</span>
                 </span>
@@ -1069,10 +1198,10 @@ function Dashboard() {
                 <p>สัปดาห์ที่แล้ว: {metrics.weekComparison.users.lastWeek.toLocaleString('th-TH')}</p>
               </div>
             </div>
-            <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl border border-purple-200">
+            <div className="p-4 bg-[#FFFAF0] rounded-xl border border-[#F5E5B8]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-800">Token</span>
-                <span className="flex items-center gap-1 text-green-600">
+                <span className="flex items-center gap-1 text-[#F5C200]">
                   <HiArrowUp className="text-sm" />
                   <span className="text-sm font-bold">+{metrics.weekComparison.tokens.change}%</span>
                 </span>
@@ -1082,10 +1211,10 @@ function Dashboard() {
                 <p>สัปดาห์ที่แล้ว: {(metrics.weekComparison.tokens.lastWeek / 1000000).toFixed(1)}M</p>
               </div>
             </div>
-            <div className="p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200">
+            <div className="p-4 bg-[#FFFAF0] rounded-xl border border-[#F5E5B8]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-800">Interactions</span>
-                <span className="flex items-center gap-1 text-green-600">
+                <span className="flex items-center gap-1 text-[#F5C200]">
                   <HiArrowUp className="text-sm" />
                   <span className="text-sm font-bold">+{metrics.weekComparison.interactions.change}%</span>
                 </span>
@@ -1106,47 +1235,47 @@ function Dashboard() {
         {filter !== 'system' && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 flex flex-col h-full">
           <div className="flex items-center gap-3 mb-6 flex-shrink-0">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-3 shadow-lg">
+            <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
               <HiFire className="text-white text-2xl" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-800">ความแม่นยำของ Bot</h3>
-              <p className="text-xs text-gray-600">Bot Knowledge Accuracy (รวมทั้งหมด)</p>
+              <h3 className="text-2xl font-bold text-gray-800">ความแม่นยำของ Bot</h3>
+              <p className="text-sm text-gray-600">Bot Knowledge Accuracy (รวมทั้งหมด)</p>
             </div>
           </div>
           <div className="flex-1 flex flex-col justify-center">
             {/* Overall Accuracy Display */}
             <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 shadow-2xl mb-4">
+              <div className="inline-flex items-center justify-center w-32 h-32 rounded-full bg-[#F5C200] shadow-2xl mb-4">
                 <div className="text-center">
                   <p className="text-4xl font-bold text-white">{metrics.botKnowledgeAccuracy.overallAccuracy}%</p>
-                  <p className="text-xs text-orange-100 mt-1">ความแม่นยำ</p>
+                  <p className="text-xs text-[#F3EBDD] mt-1">ความแม่นยำ</p>
                 </div>
               </div>
               <div className="flex items-center justify-center gap-2 mt-2">
-                <HiTrendingUp className="text-green-600" />
-                <span className="text-sm font-semibold text-green-600">+{metrics.botKnowledgeAccuracy.improvement}%</span>
-                <span className="text-xs text-gray-500">จากเดือนที่แล้ว</span>
+                <HiTrendingUp className="text-[#8B8680]" />
+                <span className="text-sm font-semibold text-[#8B8680]">+{metrics.botKnowledgeAccuracy.improvement}%</span>
+                <span className="text-sm text-gray-500">จากเดือนที่แล้ว</span>
               </div>
             </div>
 
             {/* Statistics Grid */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+              <div className="p-4 bg-[#FFFAF0] rounded-xl border border-[#F5E5B8]">
                 <p className="text-xs text-gray-600 mb-1">คำถามทั้งหมด</p>
-                <p className="text-2xl font-bold text-gray-800">{metrics.botKnowledgeAccuracy.totalQuestions.toLocaleString('th-TH')}</p>
+                <p className="text-xl font-bold text-gray-900">{metrics.botKnowledgeAccuracy.totalQuestions.toLocaleString('th-TH')}</p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
+              <div className="p-4 bg-[#FFFAF0] rounded-xl border border-[#F5E5B8]">
                 <p className="text-xs text-gray-600 mb-1">ตอบจาก Knowledge</p>
-                <p className="text-2xl font-bold text-green-700">{metrics.botKnowledgeAccuracy.knowledgeMatches.toLocaleString('th-TH')}</p>
+                <p className="text-xl font-bold text-[#10B981]">{metrics.botKnowledgeAccuracy.knowledgeMatches.toLocaleString('th-TH')}</p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
+              <div className="p-4 bg-[#FFFAF0] rounded-xl border border-[#F5E5B8]">
                 <p className="text-xs text-gray-600 mb-1">ไม่ได้ตอบจาก Knowledge</p>
-                <p className="text-2xl font-bold text-purple-700">{metrics.botKnowledgeAccuracy.nonKnowledgeAnswers.toLocaleString('th-TH')}</p>
+                <p className="text-xl font-bold text-red-600">{metrics.botKnowledgeAccuracy.nonKnowledgeAnswers.toLocaleString('th-TH')}</p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200">
+              <div className="p-4 bg-[#FFFAF0] rounded-xl border border-[#F5E5B8]">
                 <p className="text-xs text-gray-600 mb-1">เวลาตอบเฉลี่ย</p>
-                <p className="text-2xl font-bold text-orange-700">{metrics.botKnowledgeAccuracy.averageResponseTime}</p>
+                <p className="text-xl font-bold text-[#F5C200]">{metrics.botKnowledgeAccuracy.averageResponseTime}</p>
               </div>
             </div>
 
@@ -1154,17 +1283,17 @@ function Dashboard() {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-semibold text-gray-700">ความแม่นยำจาก Knowledge</span>
-                <span className="font-bold text-orange-600">{metrics.botKnowledgeAccuracy.overallAccuracy}%</span>
+                <span className="font-bold text-[#8B8680]">{metrics.botKnowledgeAccuracy.overallAccuracy}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-orange-500 to-orange-600 h-4 rounded-full transition-all duration-1000 flex items-center justify-end pr-2"
+                  className="bg-[#F5C200] h-4 rounded-full transition-all duration-1000 flex items-center justify-end pr-2"
                   style={{ width: `${metrics.botKnowledgeAccuracy.overallAccuracy}%` }}
                 >
                   <span className="text-xs font-semibold text-white">{metrics.botKnowledgeAccuracy.overallAccuracy}%</span>
                 </div>
               </div>
-              <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
+              <div className="flex items-center justify-between text-sm text-gray-500 mt-2">
                 <span>ตอบจาก Knowledge: {metrics.botKnowledgeAccuracy.knowledgeMatches.toLocaleString('th-TH')} ({metrics.botKnowledgeAccuracy.overallAccuracy}%)</span>
                 <span>ไม่ได้ตอบ: {metrics.botKnowledgeAccuracy.nonKnowledgeAnswers.toLocaleString('th-TH')} ({((metrics.botKnowledgeAccuracy.nonKnowledgeAnswers / metrics.botKnowledgeAccuracy.totalQuestions) * 100).toFixed(1)}%)</span>
               </div>
@@ -1179,3 +1308,4 @@ function Dashboard() {
 }
 
 export default Dashboard;
+

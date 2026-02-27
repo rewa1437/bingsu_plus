@@ -4,7 +4,7 @@ import { HiSearch, HiFilter, HiPlus, HiUserGroup, HiEye, HiEyeOff, HiTrash, HiOu
 import { botListRaw, BOT_LIMIT_PER_USER } from '../data/botsData';
 import { knowledgeListRaw, KNOWLEDGE_LIMIT_PER_USER } from '../data/knowledgeData';
 
-function SupportPanel({ users, setUsers }) {
+function SupportPanel({ users, setUsers, groups, setGroups }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -46,15 +46,6 @@ function SupportPanel({ users, setUsers }) {
   const location = useLocation();
   const navigate = useNavigate();
   const itemsPerPage = 20;
-
-  // Mock groups data
-  const [groups, setGroups] = useState([
-    { id: 1, name: 'พพอ.', description: 'กลุ่มงานหลัก', avatar: 'พ', members: [3, 6] },
-    { id: 2, name: 'บิงชู', description: 'กลุ่มฝ่ายขาย', avatar: 'บ', members: [8, 10] },
-    { id: 3, name: 'ถั่วแระ', description: 'กลุ่มดูแลลูกค้า', avatar: 'ถ', members: [14, 16, 18, 21] },
-    { id: 4, name: 'อชจ.', description: 'กลุ่มทดสอบระบบ', avatar: 'อ', members: [23, 24, 27] },
-    { id: 5, name: 'บักอะ', description: 'กลุ่มสำรอง', avatar: 'บ', members: [29, 30, 33] }
-  ]);
 
   const handleToggleStatus = (userId) => {
     setUsers(users.map(user => 

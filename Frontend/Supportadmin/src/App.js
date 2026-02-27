@@ -15,6 +15,13 @@ import { supportUsersRaw } from './data/supportUsersData';
 function AppContent() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [users, setUsers] = useState(supportUsersRaw);
+  const [groups, setGroups] = useState([
+    { id: 1, name: 'พพอ.', description: 'กลุ่มงานหลัก', avatar: 'พ', members: [3, 6] },
+    { id: 2, name: 'บิงชู', description: 'กลุ่มฝ่ายขาย', avatar: 'บ', members: [8, 10] },
+    { id: 3, name: 'ถั่วแระ', description: 'กลุ่มดูแลลูกค้า', avatar: 'ถ', members: [14, 16, 18, 21] },
+    { id: 4, name: 'อชจ.', description: 'กลุ่มทดสอบระบบ', avatar: 'อ', members: [23, 24, 27] },
+    { id: 5, name: 'บักอะ', description: 'กลุ่มสำรอง', avatar: 'บ', members: [29, 30, 33] }
+  ]);
   const location = useLocation();
   const isLoginPage = location.pathname === '/login' || location.pathname === '/auth';
 
@@ -32,14 +39,14 @@ function AppContent() {
         </div>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard users={users} groups={groups} />} />
           <Route path="/homepage" element={<Home />} />
           <Route path="/home" element={<Navigate to="/homepage" replace />} />
           <Route path="/bots" element={<Bots />} />
           <Route path="/bots/:id" element={<BotDetail />} />
           <Route path="/knowledge" element={<Knowledge />} />
           <Route path="/knowledge/:id/add-data" element={<KnowledgeDetail />} />
-          <Route path="/support-panel" element={<SupportPanel users={users} setUsers={setUsers} />} />
+          <Route path="/support-panel" element={<SupportPanel users={users} setUsers={setUsers} groups={groups} setGroups={setGroups} />} />
         </Routes>
       </main>
     </div>

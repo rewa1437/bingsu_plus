@@ -1,12 +1,21 @@
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { HiOutlineArrowLeft, HiSearch } from 'react-icons/hi';
+import { knowledgeListRaw } from '../data/knowledgeData';
 
 function KnowledgeDetail() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
   const [searchQuery, setSearchQuery] = useState('');
+
+  const groupsData = useMemo(() => [
+    { id: 1, name: 'พพอ.' },
+    { id: 2, name: 'บิงชู' },
+    { id: 3, name: 'ถั่วแระ' },
+    { id: 4, name: 'อชจ.' },
+    { id: 5, name: 'บักอะ' },
+  ], []);
 
   const fallbackKnowledgeNames = useMemo(
     () => ({
@@ -34,8 +43,20 @@ function KnowledgeDetail() {
     []
   );
 
-  const knowledgeName =
-    location.state?.knowledgeName || fallbackKnowledgeNames[Number(id)] || `Knowledge ${id}`;
+  const knowledge = useMemo(() => {
+    const found = knowledgeListRaw.find(k => k.id === Number(id));
+    return found || { id: Number(id), name: fallbackKnowledgeNames[Number(id)] || `Knowledge ${id}`, groups: [] };
+  }, [id, fallbackKnowledgeNames]);
+
+  const knowledgeName = knowledge.name;
+
+  const getGroupNames = (groupIds) => {
+    if (!groupIds || !Array.isArray(groupIds)) return [];
+    return groupIds.map(groupId => {
+      const group = groupsData.find(g => g.id === groupId);
+      return group ? group.name : `Group ${groupId}`;
+    });
+  };
 
   const files = useMemo(
     () => [
@@ -106,12 +127,18 @@ function KnowledgeDetail() {
       <div>
         <h2 className='text-xl font-semibold text-gray-900 mb-4'>กลุ่ม</h2>
         <div className='flex gap-3'>
-          <div className='px-8 py-2.5 bg-yellow-400 rounded-full text-sm font-medium text-gray-900'>
-            กลุ่มที่ 1
-          </div>
-          <div className='px-8 py-2.5 bg-yellow-400 rounded-full text-sm font-medium text-gray-900'>
-            กลุ่ม ขบต.
-          </div>
+          {knowledge?.groups && knowledge.groups.length > 0 ? (
+            knowledge.groups.map((groupId, index) => (
+              <div
+                key={index}
+                className='px-8 py-2.5 bg-yellow-400 rounded-full text-sm font-medium text-gray-900'
+              >
+                {getGroupNames([groupId])[0]}
+              </div>
+            ))
+          ) : (
+            <span className='text-gray-500 text-sm'>ไม่มีข้อมูล</span>
+          )}
         </div>
       </div>
     </div>

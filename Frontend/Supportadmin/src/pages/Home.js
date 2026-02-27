@@ -32,24 +32,21 @@ function Home() {
           id: 'form-issue',
           title: 'แบบฟอร์มสำหรับแจ้งปัญหาการใช้งาน BingSu',
           content: [
-            { type: 'text', value: 'แจ้งปัญหาหรือข้อผิดพลาดที่พบระหว่างใช้งานระบบ' },
-            { type: 'list', items: ['ระบุปัญหาที่พบและความเร่งด่วน', 'แนบภาพหน้าจอหรือหลักฐาน', 'ระบุขั้นตอนก่อนเกิดปัญหา'] }
+            { type: 'pdf', file: '/BingSu Issue Report Form.pdf' }
           ]
         },
         {
           id: 'form-poc',
           title: 'แบบฟอร์มสำหรับขอข้อมูล POC ของ BingSu',
           content: [
-            { type: 'text', value: 'ขอข้อมูลและเอกสารประกอบการทำ POC (Proof of Concept)' },
-            { type: 'list', items: ['ระบุวัตถุประสงค์การทำ POC', 'กรอบเวลาและขอบเขตงาน', 'ข้อมูลระบบที่ต้องการเชื่อมต่อ'] }
+            { type: 'pdf', file: '/BingSu POC Request.pdf' }
           ]
         },
         {
           id: 'form-tech-issue',
           title: 'แบบฟอร์มแจ้งปัญหาการใช้งานด้านเทคนิค',
           content: [
-            { type: 'text', value: 'สำหรับแจ้งปัญหาเชิงเทคนิคที่ต้องการการตรวจสอบเชิงลึก' },
-            { type: 'list', items: ['ระบุระบบ/ฟีเจอร์ที่ได้รับผลกระทบ', 'แนบ log หรือรายละเอียด error', 'ระบุสภาพแวดล้อมการใช้งาน'] }
+            { type: 'pdf', file: '/BingSu Technical Issue Report Form.pdf' }
           ]
         }
       ]
@@ -165,7 +162,7 @@ function Home() {
     const updatePageWidth = () => {
       if (!viewerRef.current) return;
       const width = viewerRef.current.clientWidth;
-      setPageWidth(Math.max(320, Math.min(width - 24, 1000)));
+      setPageWidth(Math.max(320, Math.min(width - 48, 1400)));
     };
 
     updatePageWidth();
@@ -223,20 +220,20 @@ function Home() {
                         <a
                           href={doc.file}
                           download={doc.file}
-                          className='inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium transition-colors'
+                          className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-gray-800 text-sm font-medium transition-colors'
                         >
-                          <HiDownload className='text-lg' />
+                          <HiDownload className='text-base' />
                           ดาวน์โหลดเอกสาร
                         </a>
                       </div>
-                      <div ref={viewerRef} className='rounded-xl overflow-auto bg-gray-100 h-[74vh] p-3'>
+                      <div ref={viewerRef} className='rounded-xl overflow-auto bg-gray-100 h-[85vh] p-6'>
                         <Document
                           file={doc.file}
                           onLoadSuccess={onDocumentLoadSuccess}
                           loading={<p className='text-sm text-gray-500 text-center py-6'>กำลังโหลดเอกสาร...</p>}
                           error={<p className='text-sm text-red-500 text-center py-6'>ไม่สามารถโหลดไฟล์ PDF ได้</p>}
                         >
-                          <div className='flex flex-col items-center gap-3'>
+                          <div className='flex flex-col items-center gap-4'>
                             {Array.from(new Array(numPages), (_, index) => (
                               <Page
                                 key={`${doc.id}-page-${index + 1}`}
@@ -277,9 +274,9 @@ function Home() {
                               <a
                                 href={pdfFile}
                                 download={pdfFile.split('/').pop()}
-                                className='inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium transition-colors'
+                                className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-gray-800 text-sm font-medium transition-colors'
                               >
-                                <HiDownload className='text-lg' />
+                                <HiDownload className='text-base' />
                                 ดาวน์โหลดเอกสาร
                               </a>
                             </div>
@@ -306,20 +303,20 @@ function Home() {
                                     </ul>
                                   )}
                                   {item.type === 'pdf' && (
-                                    <div className='rounded-xl overflow-hidden shadow-sm h-[60vh]'>
-                                      <div className='h-full overflow-auto p-4'>
+                                    <div className='rounded-xl overflow-hidden shadow-sm h-[80vh]'>
+                                      <div className='h-full overflow-auto p-6'>
                                       <Document
                                         file={item.file}
                                         onLoadSuccess={onDocumentLoadSuccess}
                                         loading={<p className='text-sm text-gray-500 text-center py-6'>กำลังโหลดเอกสาร...</p>}
                                         error={<p className='text-sm text-red-500 text-center py-6'>ไม่สามารถโหลดไฟล์ PDF ได้</p>}
                                       >
-                                        <div className='flex flex-col items-center gap-3'>
+                                        <div className='flex flex-col items-center gap-4'>
                                           {Array.from(new Array(numPages), (_, index) => (
                                             <Page
                                               key={`subcat-pdf-page-${index + 1}`}
                                               pageNumber={index + 1}
-                                              width={Math.min(pageWidth * 0.9, 800)}
+                                              width={Math.min(pageWidth, 1200)}
                                               renderTextLayer={false}
                                               renderAnnotationLayer={false}
                                             />
