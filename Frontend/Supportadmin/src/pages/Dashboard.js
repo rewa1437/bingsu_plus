@@ -502,6 +502,8 @@ function Dashboard({ users = [], groups = [] }) {
     return null;
   };
 
+  const isAdmin = typeof window !== 'undefined' && window.userRole !== 'support';
+  
   return (
     <div className="w-full h-full p-6 min-h-screen">
       {/* Header with Animation */}
@@ -519,7 +521,8 @@ function Dashboard({ users = [], groups = [] }) {
             </div>
           </div>
           
-          {/* Filter Tabs */}
+          {/* Filter Tabs - Hide all filters for Support role, show only System */}
+          {isAdmin ? (
           <div className="flex items-center gap-2">
             <button
               onClick={() => setFilter('all')}
@@ -554,11 +557,22 @@ function Dashboard({ users = [], groups = [] }) {
               System
             </button>
           </div>
+          ) : (
+          <div className="flex items-center gap-2">
+            <button
+              disabled
+              className="px-4 py-2 rounded-lg font-semibold text-sm bg-[#8B8680] text-white shadow-md cursor-not-allowed opacity-100"
+            >
+              <HiDesktopComputer className="inline mr-1" />
+              System
+            </button>
+          </div>
+          )}
         </div>
       </div>
 
-      {/* Main Statistics Grid - Hide when System filter */}
-      {filter !== 'system' && (
+      {/* Main Statistics Grid - Hide when System filter or Support role */}
+      {filter !== 'system' && isAdmin && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         {/* User Accounts Consolidated Card */}
         <div 
@@ -913,8 +927,8 @@ function Dashboard({ users = [], groups = [] }) {
       </div>
       )}
 
-      {/* Additional Charts Section - Hide when System filter */}
-      {filter !== 'system' && (
+      {/* Additional Charts Section - Hide when System filter or Support role */}
+      {filter !== 'system' && isAdmin && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* User Role Distribution Pie Chart */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300">
@@ -1172,8 +1186,8 @@ function Dashboard({ users = [], groups = [] }) {
         </div>
         )}
 
-        {/* Week Comparison - Hide when System filter */}
-        {filter !== 'system' && (
+        {/* Week Comparison - Hide when System filter or Support role */}
+        {filter !== 'system' && isAdmin && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center gap-3 mb-6">
             <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
@@ -1187,7 +1201,7 @@ function Dashboard({ users = [], groups = [] }) {
           <div className="space-y-4">
             <div className="p-4 bg-[#FFFAF0] rounded-xl border border-[#F5E5B8]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-gray-800">ผู้ใช้</span>
+                <span className="text-sm font-semibold text-gray-800">จำนวนผู้ใช้เว็บไซต์ BingSu ต่อวัน</span>
                 <span className="flex items-center gap-1 text-[#F5C200]">
                   <HiArrowUp className="text-sm" />
                   <span className="text-sm font-bold">+{metrics.weekComparison.users.change}%</span>
@@ -1231,8 +1245,8 @@ function Dashboard({ users = [], groups = [] }) {
 
       {/* Bot Knowledge Accuracy */}
       <div className="grid gap-6 mb-8 items-stretch grid-cols-1">
-        {/* Bot Knowledge Accuracy - Hide when System filter */}
-        {filter !== 'system' && (
+        {/* Bot Knowledge Accuracy - Hide when System filter or Support role */}
+        {filter !== 'system' && isAdmin && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 flex flex-col h-full">
           <div className="flex items-center gap-3 mb-6 flex-shrink-0">
             <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">

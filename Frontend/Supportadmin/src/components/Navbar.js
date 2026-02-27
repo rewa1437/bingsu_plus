@@ -19,6 +19,7 @@ function Navbar({ onCollapseChange }) {
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(null);
   const [profileName, setProfileName] = useState('Profile');
+  const [userRole, setUserRole] = useState('admin'); // 'admin' or 'support'
   const navigate = useNavigate();
   const location = useLocation();
   const profileInitial = (profileName?.trim()?.charAt(0) || 'P').toUpperCase();
@@ -44,6 +45,14 @@ function Navbar({ onCollapseChange }) {
 
   const handleSignOut = () => {
     navigate('/login');
+  };
+
+  const handleRoleChange = (newRole) => {
+    setUserRole(newRole);
+    // Store role in window for other components to access
+    if (typeof window !== 'undefined') {
+      window.userRole = newRole;
+    }
   };
 
   return (
@@ -148,6 +157,8 @@ function Navbar({ onCollapseChange }) {
         onSignOut={handleSignOut}
         selectedAvatar={selectedAvatar}
         profileInitial={profileInitial}
+        userRole={userRole}
+        onRoleChange={handleRoleChange}
       />
     </aside>
 

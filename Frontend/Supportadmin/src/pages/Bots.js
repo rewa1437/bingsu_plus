@@ -9,6 +9,7 @@ function Bots() {
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const itemsPerPage = 12;
+  const isAdmin = typeof window !== 'undefined' && window.userRole !== 'support';
   
   // Avatar color variants
   const avatarColors = [
@@ -156,6 +157,7 @@ function Bots() {
                       >
                         รายละเอียด
                       </button>
+                      {isAdmin && (
                       <button
                         type='button'
                         onClick={() => setConfirmDeleteId(bot.id)}
@@ -164,6 +166,7 @@ function Bots() {
                         <HiTrash className='text-lg' />
                         ลบ
                       </button>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -9,6 +9,7 @@ function Knowledge() {
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const itemsPerPage = 12;
+  const isAdmin = typeof window !== 'undefined' && window.userRole !== 'support';
   const getCappedKnowledgeList = (rawList) => {
     const userKnowledgeCount = {};
     return rawList.filter((knowledge) => {
@@ -98,6 +99,7 @@ function Knowledge() {
                     >
                       รายละเอียด
                     </button>
+                    {isAdmin && (
                     <button
                       type='button'
                       onClick={() => setConfirmDeleteId(knowledge.id)}
@@ -106,6 +108,7 @@ function Knowledge() {
                       <HiTrash className='text-lg' />
                       ลบ
                     </button>
+                    )}
                   </div>
                 </div>
               </div>
