@@ -1,6 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { HiArrowLeft } from 'react-icons/hi';
-import { botListRaw } from '../data/botsData';
 
 function BotDetail() {
   const navigate = useNavigate();

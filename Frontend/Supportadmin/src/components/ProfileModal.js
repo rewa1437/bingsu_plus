@@ -18,49 +18,49 @@ function ProfileModal({ isOpen, onClose, onManageAccount, onSignOut, selectedAva
           }}
           className='w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors text-left'
         >
-          <div className='w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0 text-xl'>
-            <span className='text-gray-700 font-medium'>{selectedAvatar || profileInitial || 'P'}</span>
+          <div className='w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold bg-gradient-to-br from-[#F5C200] to-[#F0A500] text-gray-800 shadow-md'>
+            {selectedAvatar || profileInitial || 'P'}
           </div>
-          <span className='text-lg leading-none text-gray-900 font-medium'>จัดการบัญชี</span>
+          <span className='text-lg leading-none text-gray-900 font-semibold'>จัดการบัญชี</span>
         </button>
 
-        <div className='mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200'>
-          <div className='text-xs font-semibold text-gray-600 mb-2 flex items-center gap-1'>
+        <div className='mt-4 p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border border-gray-200 shadow-sm'>
+          <div className='text-xs font-semibold text-gray-700 mb-3 flex items-center gap-2 uppercase tracking-wide'>
             <HiShieldCheck className='text-sm' />
             เลือก Role
           </div>
           <div className='flex gap-2'>
             <button
               onClick={() => {
-                onRoleChange('admin');
-                onClose();
-              }}
-              className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                userRole === 'admin'
-                  ? 'bg-[#8B8680] text-white shadow-md'
-                  : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <HiShieldCheck className='text-sm' />
-              Admin
-            </button>
-            <button
-              onClick={() => {
                 onRoleChange('support');
                 onClose();
               }}
-              className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 transform ${
                 userRole === 'support'
-                  ? 'bg-[#F5C200] text-gray-800 shadow-md'
-                  : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-100'
+                  ? 'bg-[#F5C200] text-gray-800 shadow-lg scale-105'
+                  : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-[#F5C200] hover:bg-yellow-50'
               }`}
             >
-              <HiUser className='text-sm' />
+              <HiUser className='text-base' />
               Support
             </button>
+            <button
+              onClick={() => {
+                onRoleChange('admin');
+                onClose();
+              }}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 transform ${
+                userRole === 'admin'
+                  ? 'bg-[#8B8680] text-white shadow-lg scale-105'
+                  : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-[#8B8680] hover:bg-gray-100'
+              }`}
+            >
+              <HiShieldCheck className='text-base' />
+              Admin
+            </button>
           </div>
-          <div className='text-xs text-gray-500 mt-2 text-center'>
-            {userRole === 'admin' ? 'สิทธิเต็ม' : 'สิทธิจำกัด'}
+          <div className='text-xs text-gray-500 mt-3 text-center font-medium'>
+            {userRole === 'admin' ? '✓ สิทธิเต็ม' : '⊙ สิทธิจำกัด'}
           </div>
         </div>
 
@@ -69,12 +69,12 @@ function ProfileModal({ isOpen, onClose, onManageAccount, onSignOut, selectedAva
             onSignOut();
             onClose();
           }}
-          className='w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors text-left mt-3'
+          className='w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 transition-all duration-200 text-left mt-4 group'
         >
-          <div className='w-10 h-10 bg-red-50 rounded-full flex items-center justify-center flex-shrink-0'>
-            <HiLogout className='text-red-500 text-xl' />
+          <div className='w-12 h-12 bg-gradient-to-br from-red-100 to-red-50 rounded-full flex items-center justify-center flex-shrink-0 group-hover:shadow-md transition-all'>
+            <HiLogout className='text-red-600 text-lg font-semibold' />
           </div>
-          <span className='text-lg leading-none text-red-500 font-medium'>Sign Out</span>
+          <span className='text-lg leading-none text-red-600 font-semibold'>Sign Out</span>
         </button>
       </div>
     </>

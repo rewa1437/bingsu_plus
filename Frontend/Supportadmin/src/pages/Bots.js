@@ -3,13 +3,13 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { botListRaw, BOT_LIMIT_PER_USER } from '../data/botsData';
 
-function Bots() {
+function Bots({ userRole = 'support' }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const itemsPerPage = 12;
-  const isAdmin = typeof window !== 'undefined' && window.userRole !== 'support';
+  const isAdmin = userRole !== 'support';
   
   // Avatar color variants
   const avatarColors = [

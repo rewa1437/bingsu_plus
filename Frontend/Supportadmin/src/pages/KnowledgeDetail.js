@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { HiOutlineArrowLeft, HiSearch } from 'react-icons/hi';
 import { knowledgeListRaw } from '../data/knowledgeData';
 
 function KnowledgeDetail() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { id } = useParams();
   const [searchQuery, setSearchQuery] = useState('');
 

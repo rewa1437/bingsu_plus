@@ -12,9 +12,7 @@ import {
   HiArrowDown,
   HiSparkles,
   HiLightningBolt,
-  HiClock,
   HiCheckCircle,
-  HiXCircle,
   HiFire,
   HiLink,
   HiGlobe
@@ -36,8 +34,6 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { botListRaw } from '../data/botsData';
-import { knowledgeListRaw } from '../data/knowledgeData';
 
 // Mock data for dashboard metrics
 const mockDashboardData = {
@@ -132,9 +128,9 @@ const mockDashboardData = {
     usersExpiringSoon: 9,
     usersPendingApproval: 18,
     dailyUsers: {
-      today: 856,
-      yesterday: 812,
-      change: 5.4
+      today: 16,
+      yesterday: 14,
+      change: 14.3
     },
     tokenUsage: {
       today: 1823456,
@@ -178,13 +174,13 @@ const mockDashboardData = {
       change: 5.9
     },
     dailyUsersChart: [
-      { date: '6 วันก่อน', users: 367 },
-      { date: '5 วันก่อน', users: 372 },
-      { date: '4 วันก่อน', users: 377 },
-      { date: '3 วันก่อน', users: 378 },
-      { date: '2 วันก่อน', users: 380 },
-      { date: 'เมื่อวาน', users: 377 },
-      { date: 'วันนี้', users: 391 }
+      { date: '6 วันก่อน', users: 17 },
+      { date: '5 วันก่อน', users: 18 },
+      { date: '4 วันก่อน', users: 19 },
+      { date: '3 วันก่อน', users: 21 },
+      { date: '2 วันก่อน', users: 22 },
+      { date: 'เมื่อวาน', users: 21 },
+      { date: 'วันนี้', users: 23 }
     ],
     tokenUsageChart: [
       { date: '6 วันก่อน', tokens: 532567 },
@@ -277,15 +273,25 @@ const Sparkline = ({ data, color = '#3B82F6', height = 40 }) => {
   );
 };
 
-function Dashboard({ users = [], groups = [] }) {
+function Dashboard({ users = [], groups = [], userRole = 'support' }) {
   const [isVisible, setIsVisible] = useState(false);
   const [filter, setFilter] = useState('system'); // 'all', 'user', 'system'
   const dailyUsersChartRef = React.useRef(null);
   const tokenUsageChartRef = React.useRef(null);
+  const userRoleDistributionChartRef = React.useRef(null);
+  const botAccuracyDetailRef = React.useRef(null);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  // Lock filter to 'system' for Support users
+  const isAdmin = userRole !== 'support';
+  useEffect(() => {
+    if (!isAdmin) {
+      setFilter('system');
+    }
+  }, [isAdmin]);
 
   const scrollToChart = (ref) => {
     if (ref?.current) {
@@ -402,6 +408,7 @@ function Dashboard({ users = [], groups = [] }) {
   const StatCard = ({ 
     title, 
     value, 
+    valueSuffix,
     icon: Icon, 
     change, 
     changeType, 
@@ -451,6 +458,7 @@ function Dashboard({ users = [], groups = [] }) {
             <div className="ml-10">
               <p className="text-4xl font-bold text-gray-900 mb-2">
                 <AnimatedCounter value={value} />
+                {valueSuffix ? <span>{valueSuffix}</span> : null}
               </p>
               {subtitle && (
                 <p className="text-xs text-gray-500 mb-3">{subtitle}</p>
@@ -502,7 +510,24 @@ function Dashboard({ users = [], groups = [] }) {
     return null;
   };
 
-  const isAdmin = typeof window !== 'undefined' && window.userRole !== 'support';
+  // Custom tooltip for pie chart with percentage
+  const PieTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      const total = metrics.userRoleDistribution.reduce((sum, item) => sum + item.count, 0);
+      const percentage = ((data.value / total) * 100).toFixed(1);
+      return (
+        <div className="bg-white p-4 border border-gray-200 rounded-xl shadow-xl">
+          <p className="text-sm font-semibold text-gray-800 mb-2">{data.payload.role}</p>
+          <p className="text-sm flex items-center gap-2" style={{ color: data.payload.fill }}>
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload.fill }}></span>
+            {data.value.toLocaleString('th-TH')} ({percentage}%)
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
   
   return (
     <div className="w-full h-full p-6 min-h-screen">
@@ -576,7 +601,8 @@ function Dashboard({ users = [], groups = [] }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         {/* User Accounts Consolidated Card */}
         <div 
-          className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 ${
+          onClick={() => scrollToChart(userRoleDistributionChartRef)}
+          className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
           style={{ transitionDelay: '0ms' }}
@@ -598,7 +624,7 @@ function Dashboard({ users = [], groups = [] }) {
                 >
                   <HiUsers className="text-white text-lg" />
                 </div>
-                <h3 className="text-base font-bold text-gray-800">บัญชี User</h3>
+                <h3 className="text-base font-bold text-gray-800">บทบาทผู้ใช้</h3>
               </div>
               
               <div className="space-y-2">
@@ -654,6 +680,12 @@ function Dashboard({ users = [], groups = [] }) {
               
               <div className="space-y-2">
                 <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                  <span className="text-xs text-gray-600">Active อยู่</span>
+                  <span className="text-xl font-bold text-green-600">
+                    <AnimatedCounter value={metrics.totalUsers} />
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pb-2 border-b border-gray-200">
                   <span className="text-xs text-gray-600">หมดอายุใน 7 วัน</span>
                   <span className="text-xl font-bold text-[#8B8680]">
                     <AnimatedCounter value={metrics.usersExpiringSoon} />
@@ -671,7 +703,7 @@ function Dashboard({ users = [], groups = [] }) {
         </div>
 
         <StatCard
-          title="จำนวนผู้ใช้เว็บไซต์ BingSu ต่อวัน"
+          title="ผู้ใช้งานรายวัน"
           value={metrics.dailyUsers.today}
           icon={HiUsers}
           change={metrics.dailyUsers.change}
@@ -685,18 +717,14 @@ function Dashboard({ users = [], groups = [] }) {
           onCardClick={() => scrollToChart(dailyUsersChartRef)}
         />
         <StatCard
-          title="ยอดใช้งาน Token วันนี้"
-          value={metrics.tokenUsage.today}
-          icon={HiKey}
-          change={metrics.tokenUsage.change}
-          changeType="up"
-          subtitle="Token ที่ใช้ไปทั้งหมด"
-          iconColor="bg-[#8B8680]"
-          gradient={['#8B8680', '#8B8680']}
-          sparklineData={metrics.tokenUsageChart.map(d => d.tokens / 10000)}
-          bgColor="bg-white"
+          title="จำนวน Group"
+          value={metrics.totalGroups}
+          icon={HiUserGroup}
+          subtitle="Group ทั้งหมด"
+          iconColor="bg-[#F5C200]"
+          gradient={['#8B8680', '#6B6560']}
           delay={300}
-          onCardClick={() => scrollToChart(tokenUsageChartRef)}
+          bgColor="bg-white"
         />
         {/* Combined Bot and Knowledge Card */}
         <div 
@@ -709,7 +737,7 @@ function Dashboard({ users = [], groups = [] }) {
             <div 
               className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10 blur-3xl transition-all duration-500"
               style={{ 
-                background: `#F5C200`,
+                background: `#8B8680`,
                 transform: 'scale(1)'
               }}
             />
@@ -718,7 +746,7 @@ function Dashboard({ users = [], groups = [] }) {
               <div className="flex items-center gap-2 mb-4">
                 <div 
                   className="rounded-lg p-2"
-                  style={{ background: `#F5C200` }}
+                  style={{ background: `#8B8680` }}
                 >
                   <HiDesktopComputer className="text-white text-lg" />
                 </div>
@@ -737,7 +765,7 @@ function Dashboard({ users = [], groups = [] }) {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <HiBookOpen className="text-[#F5C200] text-base" />
+                    <HiBookOpen className="text-[#8B8680] text-base" />
                     <span className="text-xs text-gray-600">Knowledge Base</span>
                   </div>
                   <p className="text-2xl font-bold text-gray-900">
@@ -760,7 +788,7 @@ function Dashboard({ users = [], groups = [] }) {
             <div 
               className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10 blur-3xl transition-all duration-500"
               style={{ 
-                background: `#8B8680`,
+                background: `#F5C200`,
                 transform: 'scale(1)'
               }}
             />
@@ -769,7 +797,7 @@ function Dashboard({ users = [], groups = [] }) {
               <div className="flex items-center gap-2 mb-4">
                 <div 
                   className="rounded-lg p-2"
-                  style={{ background: `#8B8680` }}
+                  style={{ background: `#F5C200` }}
                 >
                   <HiLink className="text-white text-lg" />
                 </div>
@@ -779,7 +807,7 @@ function Dashboard({ users = [], groups = [] }) {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <HiLink className="text-[#8B8680] text-base" />
+                    <HiLink className="text-[#F5C200] text-base" />
                     <span className="text-xs text-gray-600">Integration Line</span>
                   </div>
                   <p className="text-2xl font-bold text-gray-900">
@@ -788,7 +816,7 @@ function Dashboard({ users = [], groups = [] }) {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <HiGlobe className="text-[#F5C200] text-base" />
+                    <HiGlobe className="text-[#8B8680] text-base" />
                     <span className="text-xs text-gray-600">Widget</span>
                   </div>
                   <p className="text-xl font-bold text-gray-900">
@@ -800,14 +828,30 @@ function Dashboard({ users = [], groups = [] }) {
           </div>
         </div>
         <StatCard
-          title="จำนวน Group"
-          value={metrics.totalGroups}
-          icon={HiUserGroup}
-          subtitle="Group ทั้งหมด"
-          iconColor="bg-[#F5C200]"
-          gradient={GRADIENT_COLORS.pale}
+          title="การใช้ Token รายวัน"
+          value={metrics.tokenUsage.today}
+          icon={HiKey}
+          change={metrics.tokenUsage.change}
+          changeType="up"
+          subtitle="Token ที่ใช้ไปทั้งหมด"
+          iconColor="bg-[#8B8680]"
+          gradient={['#8B8680', '#8B8680']}
+          sparklineData={metrics.tokenUsageChart.map(d => d.tokens / 10000)}
           delay={600}
           bgColor="bg-white"
+          onCardClick={() => scrollToChart(tokenUsageChartRef)}
+        />
+        <StatCard
+          title="ความแม่นยำของ Bot"
+          value={metrics.botKnowledgeAccuracy.overallAccuracy}
+          valueSuffix="%"
+          icon={HiFire}
+          subtitle="ดูรายละเอียดความแม่นยำ"
+          iconColor="bg-[#F5C200]"
+          gradient={GRADIENT_COLORS.sandy}
+          delay={700}
+          bgColor="bg-white"
+          onCardClick={() => scrollToChart(botAccuracyDetailRef)}
         />
       </div>
       )}
@@ -826,7 +870,7 @@ function Dashboard({ users = [], groups = [] }) {
                 <HiUsers className="text-white text-2xl" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-gray-800">แนวโน้มผู้ใช้งานรายวัน</h3>
+                <h3 className="text-2xl font-bold text-gray-800">ผู้ใช้งานรายวัน</h3>
                 <p className="text-sm text-gray-600">7 วันล่าสุด</p>
               </div>
             </div>
@@ -931,14 +975,17 @@ function Dashboard({ users = [], groups = [] }) {
       {filter !== 'system' && isAdmin && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* User Role Distribution Pie Chart */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300">
+        <div
+          ref={userRoleDistributionChartRef}
+          className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300"
+        >
           <div className="flex items-center gap-3 mb-6">
             <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
               <HiUserGroup className="text-white text-2xl" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-800">การกระจายบทบาทผู้ใช้</h3>
-              <p className="text-sm text-gray-600">จำนวนผู้ใช้ตามบทบาท</p>
+              <h3 className="text-2xl font-bold text-gray-800">บทบาทผู้ใช้</h3>
+              <p className="text-sm text-gray-600">การกระจายตามบทบาท</p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={320}>
@@ -948,7 +995,7 @@ function Dashboard({ users = [], groups = [] }) {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ role, percent }) => `${role}\n${(percent * 100).toFixed(0)}%`}
+                label={({ role, count, percent }) => `${role}\n${count} (${(percent * 100).toFixed(0)}%)`}
                 outerRadius={110}
                 fill="#8884d8"
                 dataKey="count"
@@ -964,7 +1011,7 @@ function Dashboard({ users = [], groups = [] }) {
                   />
                 ))}
               </Pie>
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<PieTooltip />} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -1247,7 +1294,7 @@ function Dashboard({ users = [], groups = [] }) {
       <div className="grid gap-6 mb-8 items-stretch grid-cols-1">
         {/* Bot Knowledge Accuracy - Hide when System filter or Support role */}
         {filter !== 'system' && isAdmin && (
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 flex flex-col h-full">
+        <div ref={botAccuracyDetailRef} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 flex flex-col h-full">
           <div className="flex items-center gap-3 mb-6 flex-shrink-0">
             <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
               <HiFire className="text-white text-2xl" />

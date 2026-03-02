@@ -13,13 +13,12 @@ import bingsuLogo from '../assets/images/หน่องบิงไม่มี
 import ProfileModal from './ProfileModal';
 import AccountModal from './AccountModal';
 
-function Navbar({ onCollapseChange }) {
+function Navbar({ onCollapseChange, userRole, onRoleChange }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(null);
   const [profileName, setProfileName] = useState('Profile');
-  const [userRole, setUserRole] = useState('admin'); // 'admin' or 'support'
   const navigate = useNavigate();
   const location = useLocation();
   const profileInitial = (profileName?.trim()?.charAt(0) || 'P').toUpperCase();
@@ -48,10 +47,8 @@ function Navbar({ onCollapseChange }) {
   };
 
   const handleRoleChange = (newRole) => {
-    setUserRole(newRole);
-    // Store role in window for other components to access
-    if (typeof window !== 'undefined') {
-      window.userRole = newRole;
+    if (onRoleChange) {
+      onRoleChange(newRole);
     }
   };
 

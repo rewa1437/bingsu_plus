@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { HiLightBulb, HiChevronDown, HiChevronRight, HiDownload, HiBookOpen, HiCurrencyDollar, HiPresentationChartBar, HiPencil, HiSave, HiX, HiPlus, HiTrash } from 'react-icons/hi';
+import { HiLightBulb, HiChevronDown, HiChevronRight, HiBookOpen, HiCurrencyDollar, HiPresentationChartBar, HiPencil, HiSave, HiX, HiPlus, HiTrash, HiDownload } from 'react-icons/hi';
 import { Document, Page, pdfjs } from 'react-pdf';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -333,13 +333,25 @@ function Home() {
     }
   };
 
-  const handleAddDocument = (docId, subcatId, files) => {
-    if (!files || files.length === 0) return;
-    const newItems = Array.from(files).map((file) => ({
-      type: 'pdf',
-      file: URL.createObjectURL(file)
-    }));
+  const handleUploadMainPdf = (docId, file) => {
+    if (!file) return;
 
+    const pdfUrl = URL.createObjectURL(file);
+    setDocuments(documents.map(doc =>
+      doc.id === docId
+        ? {
+            ...doc,
+            type: 'pdf',
+            file: pdfUrl
+          }
+        : doc
+    ));
+  };
+
+  const handleUploadSubcategoryPdf = (docId, subcatId, file) => {
+    if (!file) return;
+
+    const pdfUrl = URL.createObjectURL(file);
     setDocuments(documents.map(doc => {
       if (doc.id === docId) {
         return {
@@ -348,56 +360,8 @@ function Home() {
             if (sub.id === subcatId) {
               return {
                 ...sub,
-                content: [...sub.content, ...newItems]
+                content: [...sub.content, { type: 'pdf', file: pdfUrl }]
               };
-            }
-            return sub;
-          })
-        };
-      }
-      return doc;
-    }));
-  };
-
-  const handleAddListItem = (docId, subcatId, contentIdx) => {
-    setDocuments(documents.map(doc => {
-      if (doc.id === docId) {
-        return {
-          ...doc,
-          subcategories: doc.subcategories.map(sub => {
-            if (sub.id === subcatId) {
-              const newContent = [...sub.content];
-              if (newContent[contentIdx].type === 'list') {
-                newContent[contentIdx] = {
-                  ...newContent[contentIdx],
-                  items: [...newContent[contentIdx].items, 'รายการใหม่']
-                };
-              }
-              return { ...sub, content: newContent };
-            }
-            return sub;
-          })
-        };
-      }
-      return doc;
-    }));
-  };
-
-  const handleDeleteListItem = (docId, subcatId, contentIdx, itemIdx) => {
-    setDocuments(documents.map(doc => {
-      if (doc.id === docId) {
-        return {
-          ...doc,
-          subcategories: doc.subcategories.map(sub => {
-            if (sub.id === subcatId) {
-              const newContent = [...sub.content];
-              if (newContent[contentIdx].type === 'list') {
-                newContent[contentIdx] = {
-                  ...newContent[contentIdx],
-                  items: newContent[contentIdx].items.filter((_, idx) => idx !== itemIdx)
-                };
-              }
-              return { ...sub, content: newContent };
             }
             return sub;
           })
@@ -440,7 +404,7 @@ function Home() {
               className={`flex items-center gap-2 px-3 py-1.5 rounded-md shadow-sm hover:shadow transition-all duration-200 active:scale-95 text-sm font-semibold ${
                 isEditMode
                   ? 'bg-red-500 hover:bg-red-600 text-white'
-                  : 'bg-[#8B8680] hover:bg-[#6B6560] text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
               }`}
             >
               <span>{isEditMode ? 'ออกจากโหมดแก้ไข' : 'แก้ไข'}</span>
@@ -531,7 +495,7 @@ function Home() {
                           e.stopPropagation();
                           handleEditCategory(doc);
                         }}
-                        className='p-1.5 bg-[#8B8680] hover:bg-[#6B6560] text-white rounded transition-colors'
+                        className='p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors'
                         title='แก้ไข'
                       >
                         <HiPencil className='text-sm' />
@@ -565,14 +529,33 @@ function Home() {
                     // PDF Viewer
                     <>
                       <div className='flex justify-end mb-4'>
-                        <a
-                          href={doc.file}
-                          download={doc.file}
-                          className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-gray-800 text-sm font-medium transition-colors'
-                        >
-                          <HiDownload className='text-base' />
-                          เพิ่มเอกสาร
-                        </a>
+                        {isEditMode && isAdmin ? (
+                          <label className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-gray-800 text-sm font-medium transition-colors cursor-pointer'>
+                            <HiPlus className='text-base' />
+                            เพิ่มเอกสาร
+                            <input
+                              type='file'
+                              accept='application/pdf'
+                              className='hidden'
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleUploadMainPdf(doc.id, file);
+                                }
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
+                        ) : (
+                          <a
+                            href={doc.file}
+                            download
+                            className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-gray-800 text-sm font-medium transition-colors'
+                          >
+                            <HiDownload className='text-base' />
+                            ดาวน์โหลดเอกสาร
+                          </a>
+                        )}
                       </div>
                       <div ref={viewerRef} className='rounded-xl overflow-auto bg-gray-100 h-[85vh] p-6'>
                         <Document
@@ -611,8 +594,7 @@ function Home() {
 
                       {doc.subcategories.map((subcat) => {
                         const hasPDF = subcat.content.some(item => item.type === 'pdf');
-                        const pdfFile = hasPDF ? subcat.content.find(item => item.type === 'pdf')?.file : null;
-                        
+
                         return (
                         <div key={subcat.id} className='border border-gray-200 rounded-xl overflow-hidden'>
 
@@ -658,7 +640,7 @@ function Home() {
                                         e.stopPropagation();
                                         handleEditSubcategory(subcat);
                                       }}
-                                      className='p-1.5 bg-[#8B8680] hover:bg-[#6B6560] text-white rounded transition-colors'
+                                      className='p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors'
                                       title='แก้ไข'
                                     >
                                       <HiPencil className='text-sm' />
@@ -685,16 +667,35 @@ function Home() {
                             </button>
                           )}
                           
-                          {openSubcategory === subcat.id && hasPDF && pdfFile && (
+                          {openSubcategory === subcat.id && (
                             <div className='flex justify-end p-3 border-b border-gray-200'>
-                              <a
-                                href={pdfFile}
-                                download={pdfFile.split('/').pop()}
-                                className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-gray-800 text-sm font-medium transition-colors'
-                              >
-                                <HiDownload className='text-base' />
-                                เพิ่มเอกสาร
-                              </a>
+                              {isEditMode && isAdmin ? (
+                                <label className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-gray-800 text-sm font-medium transition-colors cursor-pointer'>
+                                  <HiPlus className='text-base' />
+                                  เพิ่มเอกสาร
+                                  <input
+                                    type='file'
+                                    accept='application/pdf'
+                                    className='hidden'
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        handleUploadSubcategoryPdf(doc.id, subcat.id, file);
+                                      }
+                                      e.target.value = '';
+                                    }}
+                                  />
+                                </label>
+                              ) : hasPDF && (
+                                <a
+                                  href={subcat.content.find(item => item.type === 'pdf')?.file}
+                                  download
+                                  className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-gray-800 text-sm font-medium transition-colors'
+                                >
+                                  <HiDownload className='text-base' />
+                                  ดาวน์โหลดเอกสาร
+                                </a>
+                              )}
                             </div>
                           )}
                           
@@ -729,7 +730,7 @@ function Home() {
                                         <>
                                           <button
                                             onClick={() => handleEditContent(doc.id, subcat.id, idx, item)}
-                                            className='p-1 bg-[#8B8680] hover:bg-[#6B6560] text-white rounded shadow-md text-xs'
+                                            className='p-1 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-md text-xs'
                                             title='แก้ไข'
                                           >
                                             <HiPencil className='text-xs' />

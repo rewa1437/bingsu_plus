@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { HiSearch, HiFilter, HiPlus, HiUserGroup, HiEye, HiEyeOff, HiTrash, HiOutlineClock, HiOutlineKey, HiOutlineUserRemove, HiOutlinePencil } from 'react-icons/hi';
 import { botListRaw, BOT_LIMIT_PER_USER } from '../data/botsData';
@@ -109,12 +109,25 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
     { type: 'admin', label: 'แอดมิน', color: 'bg-green-400' }
   ];
 
-  const expiryOptions = [
+  const expiryOptions = useMemo(() => [
     { type: '1-7', label: '1-7 วัน', min: 1, max: 7 },
     { type: '8-30', label: '8-30 วัน', min: 8, max: 30 },
     { type: '30+', label: 'มากกว่า 30 วัน', min: 31, max: Infinity },
     { type: 'expired', label: 'หมดอายุแล้ว', min: -Infinity, max: 0 }
-  ];
+  ], []);
+
+  const parseThaiDate = useCallback((thaiDateStr) => {
+    const thaiMonths = {
+      'มกราคม': 0, 'กุมภาพันธ์': 1, 'มีนาคม': 2, 'เมษายน': 3,
+      'พฤษภาคม': 4, 'มิถุนายน': 5, 'กรกฎาคม': 6, 'สิงหาคม': 7,
+      'กันยายน': 8, 'ตุลาคม': 9, 'พฤศจิกายน': 10, 'ธันวาคม': 11
+    };
+    const parts = thaiDateStr.split(' ');
+    const day = parseInt(parts[0]);
+    const month = thaiMonths[parts[1]];
+    const year = parseInt(parts[2]) - 543; // Convert Buddhist year to Christian year
+    return new Date(year, month, day);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -149,7 +162,14 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
     setSearchQuery('');
     setRoleFilters([]);
 
-    const sortedUsers = [...users].sort((a, b) => parseThaiDate(b.createdAt) - parseThaiDate(a.createdAt));
+    const sortedUsers = [...users].sort((a, b) => {
+      // Handle pending users (createdAt is '-')
+      if (a.createdAt === '-' && b.createdAt === '-') return 0;
+      if (a.createdAt === '-') return 1; // Pending users go to end
+      if (b.createdAt === '-') return -1;
+      
+      return parseThaiDate(b.createdAt) - parseThaiDate(a.createdAt);
+    });
     const targetIndex = sortedUsers.findIndex((user) => user.id === focusUserId);
 
     if (targetIndex !== -1) {
@@ -164,22 +184,9 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
     }, 3500);
 
     return () => clearTimeout(timer);
-  }, [location.pathname, location.state, navigate, users]);
+  }, [location.pathname, location.state, navigate, users, parseThaiDate]);
 
-  const parseThaiDate = (thaiDateStr) => {
-    const thaiMonths = {
-      'มกราคม': 0, 'กุมภาพันธ์': 1, 'มีนาคม': 2, 'เมษายน': 3,
-      'พฤษภาคม': 4, 'มิถุนายน': 5, 'กรกฎาคม': 6, 'สิงหาคม': 7,
-      'กันยายน': 8, 'ตุลาคม': 9, 'พฤศจิกายน': 10, 'ธันวาคม': 11
-    };
-    const parts = thaiDateStr.split(' ');
-    const day = parseInt(parts[0]);
-    const month = thaiMonths[parts[1]];
-    const year = parseInt(parts[2]) - 543; // Convert Buddhist year to Christian year
-    return new Date(year, month, day);
-  };
-
-  const parseDisplayDateToDate = (value) => {
+  const parseDisplayDateToDate = useCallback((value) => {
     if (!value || value === '-') return null;
 
     if (value.includes('/')) {
@@ -189,7 +196,7 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
     }
 
     return parseThaiDate(value);
-  };
+  }, [parseThaiDate]);
 
   const formatShortDate = (date) => {
     const day = String(date.getDate()).padStart(2, '0');
@@ -216,7 +223,7 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
     return formatShortDate(parseThaiDate(value));
   };
 
-  const getDaysUntilExpiry = (expiresAtValue) => {
+  const getDaysUntilExpiry = useCallback((expiresAtValue) => {
     if (!expiresAtValue || expiresAtValue === '-') return null;
     const expiryDate = parseDisplayDateToDate(expiresAtValue);
     if (!expiryDate || Number.isNaN(expiryDate.getTime())) return null;
@@ -228,12 +235,7 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
     const diffTime = expiryDate.getTime() - today.getTime();
     const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return daysLeft;
-  };
-
-  const isExpiryExpiringSoon = (expiresAtValue) => {
-    const daysLeft = getDaysUntilExpiry(expiresAtValue);
-    return daysLeft !== null && daysLeft <= 7 && daysLeft > 0;
-  };
+  }, [parseDisplayDateToDate]);
 
   const isExpiryExpiredOrSoon = (expiresAtValue) => {
     const daysLeft = getDaysUntilExpiry(expiresAtValue);
@@ -361,7 +363,7 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
       const dateB = parseThaiDate(b.createdAt);
       return dateB - dateA; // Descending order (newest first)
     });
-  }, [users, searchQuery, roleFilters, expiryFilters]);
+  }, [users, searchQuery, roleFilters, expiryFilters, expiryOptions, getDaysUntilExpiry, parseDisplayDateToDate, parseThaiDate]);
 
   const paginatedUsers = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -898,13 +900,15 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
                             <HiOutlineClock className="w-4 h-4" />
                             ต่อวันหมดอายุ
                           </button>
-                          <button
-                            onClick={() => handleDeleteUser(user.id)}
-                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-gray-100 inline-flex items-center gap-2"
-                          >
-                            <HiTrash className="w-4 h-4" />
-                            ลบผู้ใช้
-                          </button>
+                          {typeof window !== 'undefined' && window.userRole === 'admin' && (
+                            <button
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-gray-100 inline-flex items-center gap-2"
+                            >
+                              <HiTrash className="w-4 h-4" />
+                              ลบผู้ใช้
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1034,13 +1038,15 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
                                 <HiOutlineUserRemove className="w-4 h-4" />
                                 แก้ไขสมาชิก
                               </button>
-                              <button
-                                onClick={() => handleDeleteGroup(group.id)}
-                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-gray-100 inline-flex items-center gap-2"
-                              >
-                                <HiTrash className="w-4 h-4" />
-                                ลบกลุ่ม
-                              </button>
+                              {typeof window !== 'undefined' && window.userRole === 'admin' && (
+                                <button
+                                  onClick={() => handleDeleteGroup(group.id)}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-gray-100 inline-flex items-center gap-2"
+                                >
+                                  <HiTrash className="w-4 h-4" />
+                                  ลบกลุ่ม
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>

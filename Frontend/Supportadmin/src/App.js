@@ -14,6 +14,7 @@ import { supportUsersRaw } from './data/supportUsersData';
 
 function AppContent() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [userRole, setUserRole] = useState('support'); // 'admin' or 'support'
   const [users, setUsers] = useState(supportUsersRaw);
   const [groups, setGroups] = useState([
     { id: 1, name: 'พพอ.', description: 'กลุ่มงานหลัก', avatar: 'พ', members: [3, 6] },
@@ -31,7 +32,10 @@ function AppContent() {
 
   return (
     <div className="flex h-screen bg-white relative">
-      <Navbar onCollapseChange={setIsSidebarCollapsed} />
+      <Navbar onCollapseChange={setIsSidebarCollapsed} userRole={userRole} onRoleChange={(role) => {
+        setUserRole(role);
+        window.userRole = role;
+      }} />
       {/* Main Content */}
       <main className={`flex-1 bg-white px-8 py-6 overflow-auto flex flex-col transition-all duration-300 relative ${isSidebarCollapsed ? 'pl-16' : ''}`}>
         <div className="absolute top-6 right-8 z-[120]">
@@ -39,12 +43,12 @@ function AppContent() {
         </div>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard users={users} groups={groups} />} />
+          <Route path="/dashboard" element={<Dashboard users={users} groups={groups} userRole={userRole} />} />
           <Route path="/homepage" element={<Home />} />
           <Route path="/home" element={<Navigate to="/homepage" replace />} />
-          <Route path="/bots" element={<Bots />} />
+          <Route path="/bots" element={<Bots userRole={userRole} />} />
           <Route path="/bots/:id" element={<BotDetail />} />
-          <Route path="/knowledge" element={<Knowledge />} />
+          <Route path="/knowledge" element={<Knowledge userRole={userRole} />} />
           <Route path="/knowledge/:id/add-data" element={<KnowledgeDetail />} />
           <Route path="/support-panel" element={<SupportPanel users={users} setUsers={setUsers} groups={groups} setGroups={setGroups} />} />
         </Routes>

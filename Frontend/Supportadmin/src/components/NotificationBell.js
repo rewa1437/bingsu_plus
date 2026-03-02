@@ -44,7 +44,6 @@ function NotificationBell({ users }) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
   const [searchQuery, setSearchQuery] = useState('');
-  const [seenSignature, setSeenSignature] = useState('');
 
   const pendingUsers = useMemo(() => users.filter((user) => user.roleType === 'pending'), [users]);
 
@@ -62,7 +61,7 @@ function NotificationBell({ users }) {
         const diffTime = expiryDate.getTime() - today.getTime();
         const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (daysLeft < 0 || daysLeft > EXPIRY_ALERT_DAYS) return null;
+        if (daysLeft <= 0 || daysLeft > EXPIRY_ALERT_DAYS) return null;
 
         return { ...user, daysLeft, expiryDateText: formatShortDate(expiryDate) };
       })
@@ -70,14 +69,7 @@ function NotificationBell({ users }) {
       .sort((a, b) => a.daysLeft - b.daysLeft);
   }, [users]);
 
-  const currentSignature = useMemo(() => {
-    const pendingIds = pendingUsers.map((user) => user.id).join(',');
-    const expiringIds = expiringUsers.map((user) => user.id).join(',');
-    return `${pendingIds}|${expiringIds}`;
-  }, [pendingUsers, expiringUsers]);
-
   const totalNotifications = pendingUsers.length + expiringUsers.length;
-  const showBadge = totalNotifications > 0 && seenSignature !== currentSignature;
 
   const normalizedSearchQuery = useMemo(() => {
     const keyword = searchQuery.trim().toLowerCase();
@@ -106,7 +98,6 @@ function NotificationBell({ users }) {
   }, []);
 
   const handleBellClick = () => {
-    setSeenSignature(currentSignature);
     setSearchQuery('');
     setIsOpen((prev) => !prev);
   };
@@ -175,9 +166,9 @@ function NotificationBell({ users }) {
                     <button
                       key={user.id}
                       onClick={() => handleOpenUser(user.id)}
-                      className="w-full text-left p-3 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-colors"
+                      className="w-full text-left p-3 rounded-lg hover:bg-yellow-50 border border-transparent hover:border-yellow-300 transition-all cursor-pointer active:scale-95"
                     >
-                      <p className="text-sm font-medium text-gray-900">{user.username}</p>
+                      <p className="text-sm font-semibold text-gray-900 hover:text-gray-700">{user.username}</p>
                       <p className="text-xs text-gray-500 mt-1">ขอสิทธิ์การใช้งาน</p>
                     </button>
                   ))}
@@ -196,9 +187,9 @@ function NotificationBell({ users }) {
                     <button
                       key={user.id}
                       onClick={() => handleOpenUser(user.id)}
-                      className="w-full text-left p-3 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-colors"
+                      className="w-full text-left p-3 rounded-lg hover:bg-red-50 border border-transparent hover:border-red-300 transition-all cursor-pointer active:scale-95"
                     >
-                      <p className="text-sm font-medium text-gray-900">{user.username}</p>
+                      <p className="text-sm font-semibold text-gray-900 hover:text-gray-700">{user.username}</p>
                       <p className="text-xs text-red-500 mt-1">เหลืออีก {user.daysLeft} วัน (หมดอายุ {user.expiryDateText})</p>
                     </button>
                   ))}

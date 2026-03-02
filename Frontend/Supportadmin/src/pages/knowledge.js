@@ -3,13 +3,13 @@ import { HiSearch, HiTrash } from 'react-icons/hi';
 import { useState, useMemo, useEffect } from 'react';
 import { knowledgeListRaw, KNOWLEDGE_LIMIT_PER_USER } from '../data/knowledgeData';
 
-function Knowledge() {
+function Knowledge({ userRole = 'support' }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const itemsPerPage = 12;
-  const isAdmin = typeof window !== 'undefined' && window.userRole !== 'support';
+  const isAdmin = userRole !== 'support';
   const getCappedKnowledgeList = (rawList) => {
     const userKnowledgeCount = {};
     return rawList.filter((knowledge) => {
