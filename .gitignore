@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+*.egg
+
+# Build outputs
+build/
+dist/
+*.egg
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing / Coverage
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Misc
+.pnp
+.pnp.js
