@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # OCR service configuration
-OCR_SERVICE_URL = os.getenv("OCR_SERVICE_URL", "http://localhost:8001").rstrip("/")
+OCR_SERVICE_URL = os.getenv("OCR_SERVICE_URL").rstrip("/")
 OCR_TIMEOUT = int(os.getenv("OCR_TIMEOUT_MS", "300000")) / 1000.0  # 5 minutes default
 
 

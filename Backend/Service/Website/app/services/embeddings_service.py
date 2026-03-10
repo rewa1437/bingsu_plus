@@ -11,8 +11,8 @@ from app.utils.sanitize import sanitize_for_log
 load_dotenv()
 
 # Embeddings configuration
-EMBEDDING_PROVIDER = (os.getenv("EMBEDDING_PROVIDER", "openai") or "openai").strip().lower()
-EMBEDDING_BASE_URL = (os.getenv("EMBEDDING_BASE_URL", "https://api.openai.com/v1") or "https://api.openai.com/v1").rstrip("/")
+EMBEDDING_PROVIDER = (os.getenv("EMBEDDING_PROVIDER")).strip().lower()
+EMBEDDING_BASE_URL = (os.getenv("EMBEDDING_BASE_URL")).rstrip("/")
 EMBEDDING_API_KEY = os.getenv("EMBEDDING_API_KEY", "")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL") or (
     "models/gemini-embedding-001" if EMBEDDING_PROVIDER == "gemini" else "text-embedding-3-small"

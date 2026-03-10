@@ -12,7 +12,15 @@ from app.database import get_db
 from app.models import ChatMessage, Chat, User, chat_users, Bot, bot_documents
 from app.schemas.chat_message import ChatMessageCreate, ChatMessageUpdate, ChatMessageResponse
 from app.dependencies import get_current_user
-from app.services.rag_service import retrieve_grounding_chunks
+import sys
+from pathlib import Path
+
+# Add RAG service directory to path
+_rag_dir = Path(__file__).parent.parent.parent.parent / "Rag"
+if str(_rag_dir) not in sys.path:
+    sys.path.insert(0, str(_rag_dir))
+
+from rag_service import retrieve_grounding_chunks
 from app.services.llm_service import generate_response
 from app.utils.sanitize import sanitize_for_log
 

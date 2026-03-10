@@ -19,7 +19,7 @@ else:
 
 # OpenAI configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL")
 # ใช้ GATEWAY_BASE_URL ถ้ามี (สำหรับ AI Gateway) หรือ OPENAI_BASE_URL
 GATEWAY_BASE_URL = os.getenv("GATEWAY_BASE_URL")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or GATEWAY_BASE_URL
@@ -79,20 +79,70 @@ async def generate_response(
         print(f"⚠️ Model '{model_to_use}' is not a valid OpenAI model, using default: {OPENAI_MODEL}")
         model_to_use = OPENAI_MODEL
     
+    # ตรวจจับว่ามีหลายคำถามหรือไม่ (นับเครื่องหมายคำถามและคำถาม)
+    question_marks = ['?', '？']
+    question_words = ['อะไร', 'อย่างไร', 'เมื่อไหร่', 'ที่ไหน', 'ใคร', 'ทำไม', 'หรือไม่']
+    
+    # นับเครื่องหมายคำถาม
+    question_mark_count = sum(1 for char in user_message if char in question_marks)
+    # นับคำถาม (คำที่ขึ้นต้นด้วยคำถาม)
+    question_word_count = sum(1 for word in question_words if word in user_message)
+    # นับบรรทัดใหม่ (อาจบ่งบอกหลายคำถาม)
+    newline_count = user_message.count('\n')
+    
+    # ถือว่ามีหลายคำถามถ้า: มีเครื่องหมายคำถาม >= 2 หรือมีคำถาม >= 2 หรือมีหลายบรรทัด
+    has_multiple_questions = question_mark_count >= 2 or question_word_count >= 2 or (newline_count >= 2 and question_mark_count >= 1)
+    
+    if has_multiple_questions:
+        print(f"📝 ตรวจจับหลายคำถาม (เครื่องหมาย: {question_mark_count}, คำถาม: {question_word_count}, บรรทัด: {newline_count}) - จะใช้คำตอบแบบกระชับ")
+    
     # Build messages
     messages = []
     
-    # Build system prompt with strict instructions
-    strict_instruction = """คุณเป็น AI assistant ที่ต้องตอบคำถามโดยใช้เฉพาะข้อมูลจาก Knowledge Base ที่ให้มาเท่านั้น
+    # เพิ่มคำแนะนำสำหรับหลายคำถาม
+    conciseness_instruction = ""
+    if has_multiple_questions:
+        conciseness_instruction = """
+    
+    === คำแนะนำพิเศษสำหรับหลายคำถาม ===
+    - ตอบแต่ละคำถามอย่างกระชับและตรงประเด็น
+    - ใช้ประโยคสั้นๆ ไม่ต้องอธิบายยาว
+    - หากมีหลายคำถาม ให้แยกคำตอบด้วยการขึ้นบรรทัดใหม่
+    - จำกัดความยาวคำตอบทั้งหมดไม่เกิน 500 คำ
+    - เน้นข้อมูลสำคัญเท่านั้น ไม่ต้องรายละเอียดย่อย
+    
+    """
+    
+    strict_instruction = f"""
+    คุณเป็น AI Assistant ที่ทำงานในระบบ Retrieval-Augmented Generation (RAG)
+    และต้องตอบคำถามโดยใช้เฉพาะข้อมูลจาก Context from Knowledge Base ที่ให้มาเท่านั้น
 
-กฎสำคัญ:
-1. ตอบเฉพาะข้อมูลที่มีใน Context from Knowledge Base เท่านั้น
-2. ห้ามใช้ความรู้ทั่วไปหรือข้อมูลจากภายนอก
-3. ห้ามตอบคำถามที่ไม่มีข้อมูลใน Knowledge Base
-4. ถ้าไม่มีข้อมูลใน Knowledge Base ที่เกี่ยวข้องกับคำถาม ให้ตอบว่า "ขออภัย ไม่พบข้อมูลที่เกี่ยวข้องกับคำถามของคุณใน Knowledge Base"
-5. ถ้าข้อมูลใน Knowledge Base ไม่เพียงพอที่จะตอบคำถามได้ครบถ้วน ให้บอกว่า "ข้อมูลที่มีใน Knowledge Base ไม่เพียงพอที่จะตอบคำถามนี้ได้ครบถ้วน"
-6. ใช้เฉพาะข้อความและข้อมูลที่ระบุใน Context เท่านั้น"""
+    === บทบาท ===
+    - ใช้ข้อมูลจาก Context เท่านั้น
+    - ห้ามใช้ความรู้ทั่วไปหรือข้อมูลภายนอก
+    - ห้ามคาดเดา ห้ามเติมข้อมูลเอง
 
+    === กฎสำคัญ ===
+    1. ตอบโดยอ้างอิงเฉพาะข้อมูลที่ปรากฏใน Context เท่านั้น
+    2. ต้องระบุแหล่งที่มาโดยอ้างอิงเป็น [DocX] หรือ Source ID ที่ให้มา
+    3. หากไม่มีข้อมูลที่เกี่ยวข้อง ให้ตอบว่า:
+    ขออภัย ไม่พบข้อมูลที่เกี่ยวข้องกับคำถามของคุณใน Knowledge Base
+    4. หากข้อมูลไม่เพียงพอ ให้ตอบว่า:
+    ข้อมูลที่มีใน Knowledge Base ไม่เพียงพอที่จะตอบคำถามนี้ได้ครบถ้วน
+    5. หากมีหลายเอกสาร:
+    ให้สังเคราะห์คำตอบจากทุกเอกสารที่เกี่ยวข้อง
+    และระบุแหล่งที่มาทุกจุด
+    6. หากข้อมูลขัดแย้งกัน:
+    ให้ระบุความขัดแย้ง และแสดงข้อมูลจากแต่ละเอกสารแยกกัน
+    7. ห้ามแก้ไขตัวเลข วันที่ หรือ technical term
+    8. ห้ามสร้างแหล่งอ้างอิงปลอม
+    9. ห้ามใช้ Markdown ทุกรูปแบบ เช่น **, *, #, -, bullet, heading
+    10. ห้ามตกแต่งข้อความ ห้ามเน้นตัวหนา ห้ามใช้สัญลักษณ์พิเศษ
+    11. ตอบเป็น Plain Text เท่านั้น
+    12. ตอบอย่างกระชับ ตรงประเด็น ไม่ต้องอธิบายยาว
+    13. จำกัดความยาวคำตอบให้เหมาะสม ไม่เกิน 800 คำ
+    {conciseness_instruction}
+    """
     if system_prompt:
         # Combine user's system prompt with strict instructions
         full_system_prompt = f"{system_prompt}\n\n{strict_instruction}"
@@ -134,12 +184,18 @@ async def generate_response(
             "content": f"คำถาม: {user_message}\n\nคำแนะนำ: เนื่องจากไม่มีข้อมูลใน Knowledge Base ที่เกี่ยวข้องกับคำถามนี้ กรุณาตอบว่า 'ขออภัย ไม่พบข้อมูลที่เกี่ยวข้องกับคำถามของคุณใน Knowledge Base'"
         })
     
+    # กำหนด max_tokens ตามจำนวนคำถาม (ลดลงเมื่อมีหลายคำถาม)
+    if has_multiple_questions:
+        max_tokens = 1000  # ลดลงเมื่อมีหลายคำถาม
+    else:
+        max_tokens = 1200  # ลดจาก 2000 เป็น 1200 สำหรับคำถามเดียว
+    
     try:
         response = await client.chat.completions.create(
             model=model_to_use,
             messages=messages,
             temperature=0.7,
-            max_tokens=2000
+            max_tokens=max_tokens
         )
         
         if response.choices and len(response.choices) > 0:

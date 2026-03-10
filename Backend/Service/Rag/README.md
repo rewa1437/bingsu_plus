@@ -11,10 +11,12 @@ Service/
 │   ├── embeddings.js
 │   └── package.json
 └── Rag/            # RAG service (ที่นี่)
-    ├── config.js   # Configuration (Qdrant, RAG)
-    ├── rag.js      # RAG service (retrieveGroundingChunks)
+    ├── config.js       # Configuration (Qdrant, RAG) - สำหรับ JavaScript services
+    ├── rag_service.py  # RAG service (retrieve_grounding_chunks) - Python
     └── package.json
 ```
+
+**Note:** RAG service ใช้ Python (`rag_service.py`) และถูกเรียกใช้จาก FastAPI backend ใน `Service/Website/`
 
 ## Setup
 
@@ -52,22 +54,24 @@ RAG_QUERY_SYNONYMS='{"ความสามารถ":["skill","ability"],"ท�
 
 ## Usage
 
-### RAG Service
+### RAG Service (Python)
 
-```javascript
-import { retrieveGroundingChunks } from "./rag.js";
+```python
+from rag_service import retrieve_grounding_chunks
 
-// Retrieve relevant chunks from documents
-const chunks = await retrieveGroundingChunks(
-  ["doc-1", "doc-2"],  // document IDs
-  "What is artificial intelligence?"  // query
-);
+# Retrieve relevant chunks from documents
+chunks = await retrieve_grounding_chunks(
+    ["doc-1", "doc-2"],  # document IDs
+    "What is artificial intelligence?"  # query
+)
 
-// Returns array of chunks with:
-// - score: similarity score
-// - retrievedContext: { text, title, docId }
-// - payload: full payload from Qdrant
+# Returns array of chunks with:
+# - score: similarity score
+# - retrievedContext: { text, title, docId }
+# - payload: full payload from Qdrant
 ```
+
+**Note:** RAG service ถูกเรียกใช้จาก `Service/Website/app/routers/chat_messages.py` สำหรับ bot responses
 
 ### Embeddings Service
 

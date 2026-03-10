@@ -2,14 +2,28 @@
 RAG (Retrieval-Augmented Generation) service for FastAPI
 """
 import os
+import sys
 import json
+from pathlib import Path
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
-from app.services.embeddings_service import embed_texts
-from app.services.qdrant_client import search_qdrant, QDRANT_TOP_K
-from app.utils.sanitize import sanitize_for_log
 
-load_dotenv()
+# Add Website app directory to path for imports
+_rag_dir = Path(__file__).parent
+_website_dir = _rag_dir.parent / "Website" / "app"
+if str(_website_dir) not in sys.path:
+    sys.path.insert(0, str(_website_dir))
+
+from services.embeddings_service import embed_texts
+from services.qdrant_client import search_qdrant, QDRANT_TOP_K
+from utils.sanitize import sanitize_for_log
+
+# Load .env from root directory
+env_path = Path(__file__).parent.parent.parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+else:
+    load_dotenv()
 
 # RAG configuration
 RAG_TIMEOUT_MS = int(os.getenv("RAG_TIMEOUT_MS", "2000"))
