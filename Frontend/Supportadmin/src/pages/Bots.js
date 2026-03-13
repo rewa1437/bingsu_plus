@@ -8,7 +8,15 @@ function Bots({ userRole = 'support' }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const itemsPerPage = 12;
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const itemsPerPage = isMobile ? 5 : 12;
   const isAdmin = userRole !== 'support';
   
   // Avatar color variants
@@ -79,12 +87,12 @@ function Bots({ userRole = 'support' }) {
     <>
       {/* Header */}
       <div className='mb-6'>
-        <h1 className='text-2xl font-semibold text-gray-800 mb-4'>
+        <h1 className='text-xl sm:text-2xl font-semibold text-gray-800 mb-4 pr-12 sm:pr-0'>
           Bots <span className='text-gray-600 font-normal'>{filteredBots.length}</span>
         </h1>
         
         {/* Search Input */}
-        <div className='relative max-w-md'>
+        <div className='relative w-full sm:max-w-md'>
           <HiSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl' />
           <input
             type='text'
@@ -106,13 +114,13 @@ function Bots({ userRole = 'support' }) {
               return (
                 <div 
                   key={bot.id} 
-                  className='bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col'
+                  className='bg-white border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col'
                 >
                   {/* Top row: Avatar/Name + Status Switch */}
                   <div className='flex items-start justify-between gap-4 mb-4'>
                     <div className='flex items-start gap-4 flex-1'>
                       {/* Avatar */}
-                      <div className={`w-12 h-12 rounded-full ${bot.color} flex-shrink-0 transition-all ${
+                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full ${bot.color} flex-shrink-0 transition-all ${
                         !bot.enabled ? 'grayscale opacity-50' : ''
                       }`}></div>
                       
@@ -146,14 +154,14 @@ function Bots({ userRole = 'support' }) {
                   </div>
                   
                   {/* Bottom row: Username and Detail Button */}
-                  <div className='flex justify-between items-center mt-auto'>
-                    <p className={`text-xs ${
+                  <div className='flex justify-between items-center gap-2 mt-auto'>
+                    <p className={`text-xs truncate min-w-0 max-w-[100px] sm:max-w-none ${
                       bot.enabled ? 'text-gray-500' : 'text-gray-400'
                     }`}>By {bot.username}</p>
-                    <div className='flex items-center gap-2'>
+                    <div className='flex items-center gap-1.5 shrink-0'>
                       <button
                         onClick={() => handleBotClick(bot)}
-                        className='px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-sm'
+                        className='px-3 py-1.5 sm:px-4 sm:py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-xs sm:text-sm'
                       >
                         รายละเอียด
                       </button>
@@ -161,9 +169,9 @@ function Bots({ userRole = 'support' }) {
                       <button
                         type='button'
                         onClick={() => setConfirmDeleteId(bot.id)}
-                        className='inline-flex items-center gap-2 px-3 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium'
+                        className='inline-flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-xs sm:text-sm font-medium'
                       >
-                        <HiTrash className='text-lg' />
+                        <HiTrash className='text-sm sm:text-lg' />
                         ลบ
                       </button>
                       )}

@@ -134,7 +134,7 @@ function NotificationBell({ users }) {
       </button>
 
       {isOpen && (
-        <div className="absolute top-10 right-0 w-96 bg-white border border-gray-200 rounded-xl shadow-xl z-[200] overflow-hidden">
+        <div className="absolute top-10 right-0 w-96 max-w-[calc(100vw-3.5rem)] bg-white border border-gray-200 rounded-xl shadow-xl z-[200] overflow-hidden">
           <div className="border-b border-gray-200 px-4 pt-3">
             <div className="flex items-center gap-3">
               <button className={tabClassName('pending')} onClick={() => setActiveTab('pending')}>

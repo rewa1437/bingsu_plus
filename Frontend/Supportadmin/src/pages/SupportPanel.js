@@ -39,6 +39,10 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
   const [extendDays, setExtendDays] = useState('30');
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDescription, setNewGroupDescription] = useState('');
+  const [expandedMobileUserId, setExpandedMobileUserId] = useState(null);
+  const [expandedMobileGroupId, setExpandedMobileGroupId] = useState(null);
+  const [showMobileRoleFilter, setShowMobileRoleFilter] = useState(false);
+  const mobileRoleFilterRef = useRef(null);
   const filterRef = useRef(null);
   const expiryFilterRef = useRef(null);
   const actionMenuRef = useRef(null);
@@ -137,6 +141,10 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
 
       if (expiryFilterRef.current && !expiryFilterRef.current.contains(event.target)) {
         setShowExpiryFilter(false);
+      }
+
+      if (mobileRoleFilterRef.current && !mobileRoleFilterRef.current.contains(event.target)) {
+        setShowMobileRoleFilter(false);
       }
 
       if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
@@ -621,10 +629,10 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
   };
 
   return (
-    <div className="w-full px-8 py-8">
+    <div className="w-full px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
       {/* Header with Tabs */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-8">
+      <div className="flex items-center justify-between mb-6 pr-12 sm:pr-0">
+        <div className="flex items-center gap-x-6 sm:gap-x-8">
           <button
             onClick={() => setActiveTab('overview')}
             className={`flex items-center space-x-2 pb-2 border-b-2 transition-colors ${
@@ -658,13 +666,61 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
         // Overview Tab Content
         <>
           {/* User Count */}
-          <div className="mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-gray-900">User <span className="font-normal">{filteredUsers.length}</span></h2>
+            {/* Mobile role filter */}
+            <div className="relative sm:hidden" ref={mobileRoleFilterRef}>
+              <button
+                onClick={() => setShowMobileRoleFilter(v => !v)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
+                  roleFilters.length > 0
+                    ? 'border-yellow-400 bg-yellow-50 text-yellow-700'
+                    : 'border-gray-300 bg-white text-gray-600'
+                }`}
+              >
+                <HiFilter className="w-4 h-4" />
+                <span>บทบาท</span>
+                {roleFilters.length > 0 && (
+                  <span className="bg-yellow-400 text-gray-800 text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                    {roleFilters.length}
+                  </span>
+                )}
+              </button>
+              {showMobileRoleFilter && (
+                <div className="absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl z-50 w-44">
+                  <div className="p-2 space-y-1">
+                    {roleOptions.map((option) => (
+                      <label
+                        key={option.type}
+                        className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-3 py-2 rounded-lg"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={roleFilters.includes(option.type)}
+                          onChange={() => handleRoleFilterToggle(option.type)}
+                          className="w-4 h-4 text-yellow-400 rounded focus:ring-yellow-400"
+                        />
+                        <span className={`inline-block w-3 h-3 rounded ${option.color}`}></span>
+                        <span className="text-sm text-gray-700">{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="border-t border-gray-100 p-2">
+                    <button
+                      onClick={() => { setRoleFilters([]); setShowMobileRoleFilter(false); }}
+                      className="w-full text-xs text-gray-500 hover:text-gray-800 hover:bg-gray-50 py-1.5 rounded-lg"
+                    >
+                      ล้างทั้งหมด
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
       {/* Search Bar */}
       <div className="mb-6">
-        <div className="relative max-w-md">
+        <div className="relative w-full max-w-md">
           <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
@@ -677,8 +733,8 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg overflow-visible">
-        <div className="overflow-visible">
+      <div className="hidden sm:block bg-white rounded-lg overflow-x-auto">
+        <div className="overflow-visible min-w-[700px]">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-white border-b border-gray-200">
             <tr>
@@ -727,12 +783,12 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
                   )}
                 </div>
               </th>
-              <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">ชื่อ</th>
-              <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">อีเมล</th>
-              <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">Bot</th>
-              <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">Knowledge</th>
-              <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">ใช้งานล่าสุด</th>
-              <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">สร้างเมื่อ</th>
+              <th className="px-4 py-3 text-left text-sm font-normal text-gray-600 whitespace-nowrap">ชื่อ</th>
+              <th className="px-4 py-3 text-left text-sm font-normal text-gray-600 whitespace-nowrap">อีเมล</th>
+              <th className="px-4 py-3 text-left text-sm font-normal text-gray-600 whitespace-nowrap">Bot</th>
+              <th className="px-4 py-3 text-left text-sm font-normal text-gray-600 whitespace-nowrap">Knowledge</th>
+              <th className="px-4 py-3 text-left text-sm font-normal text-gray-600 whitespace-nowrap">ใช้งานล่าสุด</th>
+              <th className="px-4 py-3 text-left text-sm font-normal text-gray-600 whitespace-nowrap">สร้างเมื่อ</th>
               <th className="px-4 py-3 text-left text-sm font-normal text-gray-600">
                 <div className="flex items-center space-x-2 relative" ref={expiryFilterRef}>
                   <span>วันหมดอายุ</span>
@@ -794,7 +850,7 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
                       : ''
                 }`}
               >
-                <td className="px-4 py-4">
+                <td className="px-4 py-4 whitespace-nowrap">
                   <span 
                     onClick={() => handleRoleClick(user.id, user.roleType)}
                     className={`inline-flex items-center px-3 py-1 rounded-full text-sm transition-colors ${
@@ -804,7 +860,7 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
                     {user.role}
                   </span>
                 </td>
-                <td className="px-4 py-4">
+                <td className="px-4 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-medium ${user.avatarColor}`}>
                       {user.avatar}
@@ -920,8 +976,133 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
         </div>
       </div>
 
+      {/* Mobile Users List */}
+      <div className="sm:hidden bg-white rounded-lg divide-y divide-gray-200">
+        {paginatedUsers.map((user) => (
+          <div
+            key={user.id}
+            className={`transition-colors ${
+              highlightedUserId === user.id
+                ? 'bg-red-50 animate-pulse'
+                : user.roleType === 'user' && !user.isEnabled
+                  ? 'opacity-50'
+                  : ''
+            }`}
+          >
+            {/* Collapsed row */}
+            <div
+              className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 active:bg-gray-100"
+              onClick={() => setExpandedMobileUserId(prev => prev === user.id ? null : user.id)}
+            >
+              <span
+                onClick={e => { e.stopPropagation(); handleRoleClick(user.id, user.roleType); }}
+                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs whitespace-nowrap flex-shrink-0 transition-colors ${getRoleBadgeColor(user.roleType)}`}
+              >
+                {user.role}
+              </span>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-medium flex-shrink-0 ${user.avatarColor}`}>
+                  {user.avatar}
+                </div>
+                <span className="text-gray-900 truncate text-sm">{user.username}</span>
+              </div>
+              {(user.roleType === 'user' || user.roleType === 'pending') && (
+                <button
+                  onClick={e => { e.stopPropagation(); user.roleType === 'user' && handleToggleStatus(user.id); }}
+                  disabled={user.roleType === 'pending'}
+                  className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors flex-shrink-0 ${
+                    user.roleType === 'pending'
+                      ? 'bg-gray-300 cursor-not-allowed'
+                      : user.isEnabled
+                        ? 'bg-green-500'
+                        : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
+                      user.roleType === 'pending'
+                        ? 'translate-x-1'
+                        : user.isEnabled
+                          ? 'translate-x-6'
+                          : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              )}
+            </div>
+
+            {/* Expanded details */}
+            {expandedMobileUserId === user.id && (
+              <div className="px-4 pb-4 bg-gray-50 space-y-1 text-sm border-t border-gray-100">
+                <div className="flex justify-between py-1.5">
+                  <span className="text-gray-500 flex-shrink-0">ชื่อ</span>
+                  <span className="text-gray-800 font-medium text-right ml-4">{user.username}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-t border-gray-200">
+                  <span className="text-gray-500 flex-shrink-0">อีเมล</span>
+                  <span className="text-gray-800 text-right break-all ml-4">{user.email}</span>
+                </div>
+                {user.roleType === 'user' && (
+                  <>
+                    <div className="flex justify-between py-1.5 border-t border-gray-200">
+                      <span className="text-gray-500">Bot</span>
+                      <span className="text-gray-800">{`${botCountByUsername[user.username] || 0}/${BOT_LIMIT_PER_USER}`}</span>
+                    </div>
+                    <div className="flex justify-between py-1.5 border-t border-gray-200">
+                      <span className="text-gray-500">Knowledge</span>
+                      <span className="text-gray-800">{`${knowledgeCountByUsername[user.username] || 0}/${KNOWLEDGE_LIMIT_PER_USER}`}</span>
+                    </div>
+                  </>
+                )}
+                <div className="flex justify-between py-1.5 border-t border-gray-200">
+                  <span className="text-gray-500">ใช้งานล่าสุด</span>
+                  <span className="text-gray-800">{user.roleType !== 'pending' ? user.lastActive : '-'}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-t border-gray-200">
+                  <span className="text-gray-500">สร้างเมื่อ</span>
+                  <span className="text-gray-800">{user.roleType !== 'pending' ? formatDisplayDate(user.createdAt) : '-'}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-t border-gray-200">
+                  <span className="text-gray-500">วันหมดอายุ</span>
+                  <span className={user.roleType !== 'pending' && isExpiryExpiredOrSoon(user.expiresAt) ? 'text-red-500 font-semibold' : 'text-gray-800'}>
+                    {user.roleType !== 'pending' ? formatDisplayDate(user.expiresAt) : '-'}
+                  </span>
+                </div>
+                {user.roleType !== 'pending' && user.isEnabled && (
+                  <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                    <button
+                      onClick={() => handleOpenPasswordModal(user.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                    >
+                      <HiOutlineKey className="w-4 h-4" />
+                      แก้ไขรหัสผ่าน
+                    </button>
+                    <button
+                      onClick={() => handleOpenExtendModal(user.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                    >
+                      <HiOutlineClock className="w-4 h-4" />
+                      ต่อวันหมดอายุ
+                    </button>
+                    {typeof window !== 'undefined' && window.userRole === 'admin' && (
+                      <button
+                        onClick={() => handleDeleteUser(user.id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50"
+                      >
+                        <HiTrash className="w-4 h-4" />
+                        ลบผู้ใช้
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
       {/* Pagination */}
-      <div className="flex items-center justify-center space-x-2 mt-6">
+      <div className="flex items-center justify-center flex-wrap gap-2 mt-6">
         <button
           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
           disabled={currentPage === 1}
@@ -960,8 +1141,8 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
           </div>
 
           {/* Search and Create Button */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="relative flex-1 mr-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div className="relative flex-1 sm:mr-4">
               <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
@@ -981,7 +1162,7 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
           </div>
 
           {/* Groups Table */}
-          <div className="bg-white rounded-lg overflow-visible">
+          <div className="hidden sm:block bg-white rounded-lg overflow-visible">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
@@ -1055,6 +1236,67 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
                   ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Groups List */}
+          <div className="sm:hidden bg-white rounded-lg divide-y divide-gray-200">
+            {groups
+              .filter(group => group.name.toLowerCase().includes(groupSearchQuery.toLowerCase()))
+              .map((group) => (
+                <div key={group.id}>
+                  {/* Collapsed row */}
+                  <div
+                    className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 active:bg-gray-100"
+                    onClick={() => setExpandedMobileGroupId(prev => prev === group.id ? null : group.id)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium flex-shrink-0">
+                      {group.avatar}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-gray-900 text-sm font-medium truncate block">{group.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-gray-500 flex-shrink-0">
+                      <HiUserGroup className="w-4 h-4" />
+                      <span className="text-sm">{getGroupMemberCount(group)}</span>
+                    </div>
+                  </div>
+
+                  {/* Expanded details */}
+                  {expandedMobileGroupId === group.id && (
+                    <div className="px-4 pb-4 bg-gray-50 space-y-1 text-sm border-t border-gray-100">
+                      <div className="flex justify-between py-1.5">
+                        <span className="text-gray-500 flex-shrink-0">คำอธิบาย</span>
+                        <span className="text-gray-800 text-right ml-4">{group.description || '-'}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                        <button
+                          onClick={() => handleOpenGroupProfileModal(group.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                        >
+                          <HiOutlinePencil className="w-4 h-4" />
+                          โปรไฟล์กลุ่ม
+                        </button>
+                        <button
+                          onClick={() => handleOpenEditMembersModal(group.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                        >
+                          <HiOutlineUserRemove className="w-4 h-4" />
+                          แก้ไขสมาชิก
+                        </button>
+                        {typeof window !== 'undefined' && window.userRole === 'admin' && (
+                          <button
+                            onClick={() => handleDeleteGroup(group.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50"
+                          >
+                            <HiTrash className="w-4 h-4" />
+                            ลบกลุ่ม
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
           </div>
         </>
       )}
@@ -1213,11 +1455,11 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
 
       {showCreateGroupModal && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[130] px-4"
+          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[130] px-4 py-6 overflow-y-auto"
           onClick={handleCloseCreateGroupModal}
         >
           <div
-            className="w-full max-w-2xl bg-gray-300 rounded-3xl p-8 shadow-xl"
+            className="w-full max-w-2xl bg-gray-300 rounded-3xl p-4 sm:p-8 shadow-xl my-auto"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="space-y-5">
@@ -1259,11 +1501,11 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
 
       {showGroupProfileModal && selectedGroup && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[135] px-4"
+          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[135] px-4 py-6 overflow-y-auto"
           onClick={() => setShowGroupProfileModal(false)}
         >
           <div
-            className="w-full max-w-4xl bg-gray-100 rounded-3xl p-8 shadow-xl"
+            className="w-full max-w-4xl bg-gray-100 rounded-3xl p-4 sm:p-8 shadow-xl my-auto"
             onClick={(event) => event.stopPropagation()}
           >
             <h3 className="text-3xl font-semibold text-gray-900 mb-6">โปรไฟล์กลุ่ม</h3>
@@ -1300,7 +1542,7 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
 
             <div className="mb-7">
               <p className="text-lg text-gray-900 mb-3">สมาชิก</p>
-              <div className="grid grid-cols-3 gap-y-4 gap-x-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-8">
                 {selectedGroupMembers.map((member) => (
                   <div key={member.id} className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm ${member.avatarColor}`}>
@@ -1317,16 +1559,16 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
 
       {showEditMembersModal && selectedGroup && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[136] px-4"
+          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[136] px-4 py-6 overflow-y-auto"
           onClick={() => setShowEditMembersModal(false)}
         >
           <div
-            className="w-full max-w-5xl bg-gray-100 rounded-3xl p-8 shadow-xl"
+            className="w-full max-w-5xl bg-gray-100 rounded-3xl p-4 sm:p-8 shadow-xl my-auto"
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 className="text-3xl font-semibold text-gray-900 mb-4">แก้ไขสมาชิก</h3>
+            <h3 className="text-xl sm:text-3xl font-semibold text-gray-900 mb-3 sm:mb-4">แก้ไขสมาชิก</h3>
 
-            <div className="text-lg font-medium text-gray-900 mb-2">Users</div>
+            <div className="text-sm sm:text-lg font-medium text-gray-900 mb-2">Users</div>
             <div className="relative mb-5 border-b border-gray-400 pb-2">
               <HiSearch className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
@@ -1338,23 +1580,23 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
               />
             </div>
 
-            <div className="max-h-[420px] overflow-y-auto pr-2 space-y-3">
+            <div className="max-h-[45vh] sm:max-h-[420px] overflow-y-auto pr-2 space-y-3">
               {orderedSelectableMembers.map((user) => {
                 const isSelected = selectedMemberIds.includes(user.id);
 
                 return (
                   <label key={user.id} className="flex items-center justify-between px-2 cursor-pointer">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleToggleMemberSelection(user.id)}
-                        className="w-5 h-5 accent-black"
+                        className="w-4 h-4 sm:w-5 sm:h-5 accent-black"
                       />
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm ${user.avatarColor}`}>
+                      <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white text-sm ${user.avatarColor}`}>
                         {user.avatar}
                       </div>
-                      <span className="text-base text-gray-800">{user.username}</span>
+                      <span className="text-sm sm:text-base text-gray-800">{user.username}</span>
                     </div>
 
                     {isSelected && (
@@ -1369,10 +1611,10 @@ function SupportPanel({ users, setUsers, groups, setGroups }) {
               )}
             </div>
 
-            <div className="flex justify-end mt-8">
+            <div className="flex justify-end mt-4 sm:mt-8">
               <button
                 onClick={handleSaveGroupMembers}
-                className="px-10 py-2.5 rounded-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 text-base font-semibold transition-colors"
+                className="px-6 sm:px-10 py-2 sm:py-2.5 rounded-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 text-sm sm:text-base font-semibold transition-colors"
               >
                 Save
               </button>

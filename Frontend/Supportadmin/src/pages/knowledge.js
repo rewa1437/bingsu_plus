@@ -8,7 +8,15 @@ function Knowledge({ userRole = 'support' }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const itemsPerPage = 12;
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const itemsPerPage = isMobile ? 5 : 12;
   const isAdmin = userRole !== 'support';
   const getCappedKnowledgeList = (rawList) => {
     const userKnowledgeCount = {};
@@ -55,12 +63,12 @@ function Knowledge({ userRole = 'support' }) {
     <>
       {/* Header */}
       <div className='mb-6'>
-        <h1 className='text-2xl font-semibold text-gray-800 mb-4'>
+        <h1 className='text-xl sm:text-2xl font-semibold text-gray-800 mb-4 pr-12 sm:pr-0'>
           Knowledge <span className='text-gray-600 font-normal'>{filteredKnowledgeList.length}</span>
         </h1>
         
         {/* Search Input */}
-        <div className='relative max-w-md'>
+        <div className='relative w-full sm:max-w-md'>
           <HiSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl' />
           <input
             type='text'
@@ -80,22 +88,22 @@ function Knowledge({ userRole = 'support' }) {
               {paginatedKnowledgeList.map((knowledge) => (
               <div
                 key={knowledge.id}
-                className='bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col'
+                className='bg-white border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col'
               >
                 <div className='flex-1'>
                   <h3 className='text-base font-semibold text-gray-800 mb-1'>{knowledge.name}</h3>
                   <p className='text-sm text-gray-600'>{knowledge.description || 'No description'}</p>
                 </div>
-                <div className='flex justify-between items-center mt-4'>
-                  <p className='text-xs text-gray-500'>By {knowledge.username}</p>
-                  <div className='flex items-center gap-2'>
+                <div className='flex justify-between items-center gap-2 mt-4'>
+                  <p className='text-xs text-gray-500 truncate min-w-0 max-w-[100px] sm:max-w-none'>By {knowledge.username}</p>
+                  <div className='flex items-center gap-1.5 shrink-0'>
                     <button
                       onClick={() =>
                         navigate(`/knowledge/${knowledge.id}/add-data`, {
                           state: { knowledgeName: knowledge.name },
                         })
                       }
-                      className='px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-sm'
+                      className='px-3 py-1.5 sm:px-4 sm:py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-xs sm:text-sm'
                     >
                       รายละเอียด
                     </button>
@@ -103,9 +111,9 @@ function Knowledge({ userRole = 'support' }) {
                     <button
                       type='button'
                       onClick={() => setConfirmDeleteId(knowledge.id)}
-                      className='inline-flex items-center gap-2 px-3 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium'
+                      className='inline-flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-xs sm:text-sm font-medium'
                     >
-                      <HiTrash className='text-lg' />
+                      <HiTrash className='text-sm sm:text-lg' />
                       ลบ
                     </button>
                     )}

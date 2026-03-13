@@ -14,7 +14,7 @@ import ProfileModal from './ProfileModal';
 import AccountModal from './AccountModal';
 
 function Navbar({ onCollapseChange, userRole, onRoleChange }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(null);
@@ -54,7 +54,14 @@ function Navbar({ onCollapseChange, userRole, onRoleChange }) {
 
   return (
     <>
-    <aside className={`bg-gray-200 flex flex-col py-6 transition-all duration-500 ease-in-out relative ${
+    {/* Mobile backdrop - closes sidebar when tapping outside */}
+    {!isCollapsed && (
+      <div
+        className="fixed inset-0 bg-black bg-opacity-40 z-30 sm:hidden"
+        onClick={toggleSidebar}
+      />
+    )}
+    <aside className={`bg-gray-200 flex flex-col py-6 transition-all duration-500 ease-in-out fixed sm:relative inset-y-0 left-0 z-40 sm:z-auto h-full ${
       isCollapsed ? 'w-0 px-0 overflow-hidden' : 'w-52 px-6 overflow-visible'
     }`}>
       {/* Toggle Button */}

@@ -391,24 +391,25 @@ function Home() {
   const isAdmin = typeof window !== 'undefined' && window.userRole !== 'support';
 
   return (
-    <div className='w-full h-full p-4 md:p-6'>
-      <div className='mb-6 flex items-end justify-between gap-3'>
+    <div className='w-full h-full px-4 py-4 sm:p-6'>
+      <div className='mb-6 flex items-center justify-between gap-3 pr-12 sm:pr-0'>
         <div>
-          <h1 className='text-3xl font-bold text-gray-800 mb-2'>Manual</h1>
-          <p className='text-sm text-gray-600'>เอกสารคู่มือการใช้งานระบบ</p>
+          <h1 className='text-2xl sm:text-3xl font-bold text-gray-800 mb-1 sm:mb-2'>Manual</h1>
+          <p className='text-xs sm:text-sm text-gray-600'>เอกสารคู่มือการใช้งานระบบ</p>
         </div>
         {isAdmin && (
-          <div className='flex items-center gap-2'>
+          <div className='shrink-0'>
             <button
               onClick={() => setIsEditMode(!isEditMode)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md shadow-sm hover:shadow transition-all duration-200 active:scale-95 text-sm font-semibold ${
+              className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 font-semibold text-xs sm:text-sm ${
                 isEditMode
-                  ? 'bg-red-500 hover:bg-red-600 text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  ? 'bg-gradient-to-r from-red-500 to-red-400 hover:from-red-600 hover:to-red-500 text-white'
+                  : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white'
               }`}
             >
-              <span>{isEditMode ? 'ออกจากโหมดแก้ไข' : 'แก้ไข'}</span>
               {isEditMode ? <HiX className='text-base' /> : <HiPencil className='text-base' />}
+              <span className='hidden sm:inline'>{isEditMode ? 'ออกจากโหมดแก้ไข' : 'แก้ไข'}</span>
+              <span className='sm:hidden'>{isEditMode ? 'ออก' : 'แก้ไข'}</span>
             </button>
           </div>
         )}
@@ -427,20 +428,20 @@ function Home() {
         )}
 
         {documents.map((doc) => (
-          <div key={doc.id} className='bg-white border border-gray-200 rounded-2xl p-4 md:p-6 shadow-sm relative'>
+          <div key={doc.id} className='bg-white border border-gray-200 rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm relative'>
             {editingCategory === doc.id ? (
               // Edit Mode for Category
               <div className='space-y-4'>
                 <div className='flex items-center gap-3'>
-                  <div className={`w-11 h-11 rounded-xl ${doc.iconBg} flex items-center justify-center shrink-0`}>
-                    <doc.icon className={`${doc.iconColor} text-2xl`} />
+                  <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl ${doc.iconBg} flex items-center justify-center shrink-0`}>
+                    <doc.icon className={`${doc.iconColor} text-lg sm:text-2xl`} />
                   </div>
                   <div className='flex-1 space-y-2'>
                     <input
                       type='text'
                       value={editCategoryData.title || ''}
                       onChange={(e) => setEditCategoryData({...editCategoryData, title: e.target.value})}
-                      className='w-full text-xl font-semibold text-gray-800 leading-tight border-2 border-[#F5C200] rounded-lg px-3 py-2 focus:outline-none focus:border-[#F0A500]'
+                      className='w-full text-base sm:text-xl font-semibold text-gray-800 leading-tight border-2 border-[#F5C200] rounded-lg px-3 py-2 focus:outline-none focus:border-[#F0A500]'
                       placeholder='ชื่อหัวข้อหลัก'
                     />
                     <input
@@ -477,13 +478,13 @@ function Home() {
                 }}
                 className='w-full flex items-center justify-between gap-3 text-left hover:bg-gray-50 transition-colors rounded-lg px-2 py-2 -mx-2'
               >
-                <div className='flex items-center gap-3'>
-                  <div className={`w-11 h-11 rounded-xl ${doc.iconBg} flex items-center justify-center shrink-0`}>
-                    <doc.icon className={`${doc.iconColor} text-2xl`} />
+                <div className='flex items-center gap-3 min-w-0 flex-1'>
+                  <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl ${doc.iconBg} flex items-center justify-center shrink-0`}>
+                    <doc.icon className={`${doc.iconColor} text-lg sm:text-2xl`} />
                   </div>
-                  <div>
-                    <h2 className='text-xl font-semibold text-gray-800 leading-tight'>{doc.title}</h2>
-                    <p className='text-sm text-gray-500 mt-1'>{doc.description}</p>
+                  <div className='min-w-0'>
+                    <h2 className='text-base sm:text-xl font-semibold text-gray-800 leading-tight truncate'>{doc.title}</h2>
+                    <p className='text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1 line-clamp-2 sm:line-clamp-none'>{doc.description}</p>
                   </div>
                 </div>
                 <div className='flex items-center gap-2'>
@@ -630,7 +631,7 @@ function Home() {
                               onClick={() => setOpenSubcategory(openSubcategory === subcat.id ? null : subcat.id)}
                               className='w-full flex items-center justify-between gap-3 p-4 bg-gray-50 hover:bg-gray-100 transition-colors text-left'
                             >
-                              <h3 className='text-base font-semibold text-gray-800'>{subcat.title}</h3>
+                              <h3 className='text-sm sm:text-base font-semibold text-gray-800'>{subcat.title}</h3>
                               <div className='flex items-center gap-2'>
                                 {isEditMode && isAdmin && (
                                   <>

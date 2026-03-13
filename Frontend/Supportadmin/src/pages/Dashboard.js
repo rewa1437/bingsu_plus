@@ -276,6 +276,13 @@ const Sparkline = ({ data, color = '#3B82F6', height = 40 }) => {
 function Dashboard({ users = [], groups = [], userRole = 'support' }) {
   const [isVisible, setIsVisible] = useState(false);
   const [filter, setFilter] = useState('system'); // 'all', 'user', 'system'
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const dailyUsersChartRef = React.useRef(null);
   const tokenUsageChartRef = React.useRef(null);
   const userRoleDistributionChartRef = React.useRef(null);
@@ -424,7 +431,7 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
     
     return (
       <div 
-        className={`${bgColor} rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer ${
+        className={`${bgColor} rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         }`}
         style={{ transitionDelay: `${delay}ms` }}
@@ -444,19 +451,19 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
           
           <div className="relative">
             {/* Icon + Title Section */}
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
               <div 
-                className="rounded-lg p-2 transition-all duration-300"
+                className="rounded-lg p-1.5 sm:p-2 transition-all duration-300"
                 style={{ background: gradient[0] }}
               >
-                <Icon className="text-white text-lg" />
+                <Icon className="text-white text-sm sm:text-lg" />
               </div>
-              <p className="text-base font-bold text-gray-800">{title}</p>
+              <p className="text-xs sm:text-base font-bold text-gray-800 leading-tight">{title}</p>
             </div>
             
             {/* Value Section */}
-            <div className="ml-10">
-              <p className="text-4xl font-bold text-gray-900 mb-2">
+            <div className="ml-7 sm:ml-10">
+              <p className="text-2xl sm:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
                 <AnimatedCounter value={value} />
                 {valueSuffix ? <span>{valueSuffix}</span> : null}
               </p>
@@ -478,7 +485,7 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
             
             {/* Sparkline */}
             {sparklineData && (
-              <div className="mt-4 h-12">
+              <div className="mt-2 sm:mt-4 h-10 sm:h-12">
                 <Sparkline 
                   data={sparklineData} 
                   color={gradient[0]}
@@ -496,12 +503,12 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-4 border border-gray-200 rounded-xl shadow-xl">
-          <p className="text-sm font-semibold text-gray-800 mb-2">{label}</p>
+        <div className="bg-white p-3 border border-gray-200 rounded-xl shadow-xl max-w-[160px] break-words">
+          <p className="text-xs font-semibold text-gray-800 mb-1.5 leading-snug">{label}</p>
           {payload.map((entry, index) => (
-            <p key={index} className="text-sm flex items-center gap-2" style={{ color: entry.color }}>
-              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }}></span>
-              {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString('th-TH') : entry.value}
+            <p key={index} className="text-xs flex items-center gap-1.5" style={{ color: entry.color }}>
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.color }}></span>
+              <span className="truncate">{entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString('th-TH') : entry.value}</span>
             </p>
           ))}
         </div>
@@ -530,28 +537,28 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
   };
   
   return (
-    <div className="w-full h-full p-6 min-h-screen">
+    <div className="w-full h-full px-4 py-4 sm:p-6 min-h-screen">
       {/* Header with Animation */}
-      <div className={`mb-8 transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-[#8B8680] rounded-xl p-3 shadow-lg">
-              <HiSparkles className="text-white text-3xl" />
+      <div className={`mb-6 sm:mb-8 transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2 sm:gap-3 pr-12 sm:pr-0">
+            <div className="bg-[#8B8680] rounded-xl p-2 sm:p-3 shadow-lg flex-shrink-0">
+              <HiSparkles className="text-white text-xl sm:text-3xl" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-[#8B8680]">
+              <h1 className="text-2xl sm:text-4xl font-bold text-[#8B8680]">
                 Dashboard
               </h1>
-              <p className="text-sm text-gray-600 mt-1">ภาพรวมระบบและสถิติการใช้งานแบบ Real-time</p>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">ภาพรวมระบบและสถิติการใช้งานแบบ Real-time</p>
             </div>
           </div>
           
           {/* Filter Tabs - Hide all filters for Support role, show only System */}
           {isAdmin ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-300 ${
                 filter === 'all'
                   ? 'bg-[#8B8680] text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -561,7 +568,7 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
             </button>
             <button
               onClick={() => setFilter('user')}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-300 ${
                 filter === 'user'
                   ? 'bg-[#8B8680] text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -572,7 +579,7 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
             </button>
             <button
               onClick={() => setFilter('system')}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-300 ${
                 filter === 'system'
                   ? 'bg-[#8B8680] text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -586,7 +593,7 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
           <div className="flex items-center gap-2">
             <button
               disabled
-              className="px-4 py-2 rounded-lg font-semibold text-sm bg-[#8B8680] text-white shadow-md cursor-not-allowed opacity-100"
+              className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm bg-[#8B8680] text-white shadow-md cursor-not-allowed opacity-100"
             >
               <HiDesktopComputer className="inline mr-1" />
               System
@@ -598,11 +605,11 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
 
       {/* Main Statistics Grid - Hide when System filter or Support role */}
       {filter !== 'system' && isAdmin && (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 mb-4 sm:mb-8">
         {/* User Accounts Consolidated Card */}
         <div 
           onClick={() => scrollToChart(userRoleDistributionChartRef)}
-          className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer ${
+          className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
           style={{ transitionDelay: '0ms' }}
@@ -617,32 +624,32 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
             />
             <div className="relative">
               {/* Title with Icon */}
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-4">
                 <div 
-                  className="rounded-lg p-2"
+                  className="rounded-lg p-1.5 sm:p-2"
                   style={{ background: `#F5C200` }}
                 >
-                  <HiUsers className="text-white text-lg" />
+                  <HiUsers className="text-white text-sm sm:text-lg" />
                 </div>
-                <h3 className="text-base font-bold text-gray-800">บทบาทผู้ใช้</h3>
+                <h3 className="text-xs sm:text-base font-bold text-gray-800 leading-tight">บทบาทผู้ใช้</h3>
               </div>
               
-              <div className="space-y-2">
-                <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+              <div className="space-y-1.5 sm:space-y-2">
+                <div className="flex items-center justify-between pb-1.5 sm:pb-2 border-b border-gray-200">
                   <span className="text-xs text-gray-600">บัญชีทั้งหมด</span>
-                  <span className="text-xl font-bold text-gray-900">
+                  <span className="text-base sm:text-xl font-bold text-gray-900">
                     <AnimatedCounter value={metrics.totalAccounts} />
                   </span>
                 </div>
-                <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                <div className="flex items-center justify-between pb-1.5 sm:pb-2 border-b border-gray-200">
                   <span className="text-xs text-gray-600">ผู้ใช้งาน</span>
-                  <span className="text-xl font-bold text-[#8B8680]">
+                  <span className="text-base sm:text-xl font-bold text-[#8B8680]">
                     <AnimatedCounter value={metrics.userRoleCount} />
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-600">รอดำเนินการ</span>
-                  <span className="text-xl font-bold text-[#F5C200]">
+                  <span className="text-base sm:text-xl font-bold text-[#F5C200]">
                     <AnimatedCounter value={metrics.usersPendingApproval} />
                   </span>
                 </div>
@@ -653,7 +660,7 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
 
         {/* User Status Consolidated Card */}
         <div 
-          className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 ${
+          className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
           style={{ transitionDelay: '100ms' }}
@@ -668,32 +675,32 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
             />
             <div className="relative">
               {/* Title with Icon */}
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-4">
                 <div 
-                  className="rounded-lg p-2"
+                  className="rounded-lg p-1.5 sm:p-2"
                   style={{ background: `#8B8680` }}
                 >
-                  <HiExclamationCircle className="text-white text-lg" />
+                  <HiExclamationCircle className="text-white text-sm sm:text-lg" />
                 </div>
-                <h3 className="text-base font-bold text-gray-800">สถานะ User</h3>
+                <h3 className="text-xs sm:text-base font-bold text-gray-800 leading-tight">สถานะ User</h3>
               </div>
               
-              <div className="space-y-2">
-                <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+              <div className="space-y-1.5 sm:space-y-2">
+                <div className="flex items-center justify-between pb-1.5 sm:pb-2 border-b border-gray-200">
                   <span className="text-xs text-gray-600">Active อยู่</span>
-                  <span className="text-xl font-bold text-green-600">
+                  <span className="text-base sm:text-xl font-bold text-green-600">
                     <AnimatedCounter value={metrics.totalUsers} />
                   </span>
                 </div>
-                <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                <div className="flex items-center justify-between pb-1.5 sm:pb-2 border-b border-gray-200">
                   <span className="text-xs text-gray-600">หมดอายุใน 7 วัน</span>
-                  <span className="text-xl font-bold text-[#8B8680]">
+                  <span className="text-base sm:text-xl font-bold text-[#8B8680]">
                     <AnimatedCounter value={metrics.usersExpiringSoon} />
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-600">ถูก Inactivate</span>
-                  <span className="text-xl font-bold text-gray-600">
+                  <span className="text-base sm:text-xl font-bold text-gray-600">
                     <AnimatedCounter value={metrics.usersInactivated} />
                   </span>
                 </div>
@@ -728,7 +735,7 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
         />
         {/* Combined Bot and Knowledge Card */}
         <div 
-          className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 ${
+          className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
           style={{ transitionDelay: '400ms' }}
@@ -743,32 +750,32 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
             />
             <div className="relative">
               {/* Title with Icon */}
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-4">
                 <div 
-                  className="rounded-lg p-2"
+                  className="rounded-lg p-1.5 sm:p-2"
                   style={{ background: `#8B8680` }}
                 >
-                  <HiDesktopComputer className="text-white text-lg" />
+                  <HiDesktopComputer className="text-white text-sm sm:text-lg" />
                 </div>
-                <h3 className="text-base font-bold text-gray-800">จำนวน Bot & Knowledge</h3>
+                <h3 className="text-xs sm:text-base font-bold text-gray-800 leading-tight">จำนวน Bot & Knowledge</h3>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <HiDesktopComputer className="text-[#8B8680] text-base" />
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <HiDesktopComputer className="text-[#8B8680] text-sm sm:text-base" />
                     <span className="text-xs text-gray-600">Bot ทั้งหมด</span>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-base sm:text-2xl font-bold text-gray-900">
                     <AnimatedCounter value={metrics.totalBots} />
                   </p>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <HiBookOpen className="text-[#8B8680] text-base" />
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <HiBookOpen className="text-[#8B8680] text-sm sm:text-base" />
                     <span className="text-xs text-gray-600">Knowledge Base</span>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-base sm:text-2xl font-bold text-gray-900">
                     <AnimatedCounter value={metrics.totalKnowledge} />
                   </p>
                 </div>
@@ -779,7 +786,7 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
 
         {/* Integration Card */}
         <div 
-          className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 ${
+          className={`bg-white rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
           style={{ transitionDelay: '500ms' }}
@@ -794,32 +801,32 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
             />
             <div className="relative">
               {/* Title with Icon */}
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-4">
                 <div 
-                  className="rounded-lg p-2"
+                  className="rounded-lg p-1.5 sm:p-2"
                   style={{ background: `#F5C200` }}
                 >
-                  <HiLink className="text-white text-lg" />
+                  <HiLink className="text-white text-sm sm:text-lg" />
                 </div>
-                <h3 className="text-base font-bold text-gray-800">Integration</h3>
+                <h3 className="text-xs sm:text-base font-bold text-gray-800 leading-tight">Integration</h3>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <HiLink className="text-[#F5C200] text-base" />
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <HiLink className="text-[#F5C200] text-sm sm:text-base" />
                     <span className="text-xs text-gray-600">Integration Line</span>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-base sm:text-2xl font-bold text-gray-900">
                     <AnimatedCounter value={metrics.totalIntegrationLines} />
                   </p>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <HiGlobe className="text-[#8B8680] text-base" />
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <HiGlobe className="text-[#8B8680] text-sm sm:text-base" />
                     <span className="text-xs text-gray-600">Widget</span>
                   </div>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-base sm:text-xl font-bold text-gray-900">
                     <AnimatedCounter value={metrics.totalWidgets} />
                   </p>
                 </div>
@@ -864,19 +871,19 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
           ref={dailyUsersChartRef}
           className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300"
         >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
-                <HiUsers className="text-white text-2xl" />
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="bg-[#F5C200] rounded-xl p-2 sm:p-3 shadow-lg">
+                <HiUsers className="text-white text-lg sm:text-2xl" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-gray-800">ผู้ใช้งานรายวัน</h3>
-                <p className="text-sm text-gray-600">7 วันล่าสุด</p>
+                <h3 className="text-lg sm:text-2xl font-bold text-gray-800">ผู้ใช้งานรายวัน</h3>
+                <p className="text-xs sm:text-sm text-gray-600">7 วันล่าสุด</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-[#F2E9DA] px-3 py-1 rounded-full">
-              <HiTrendingUp className="text-[#8B8680]" />
-              <span className="text-sm font-semibold text-[#8B8680]">+{metrics.dailyUsers.change}%</span>
+            <div className="flex items-center gap-1 sm:gap-2 bg-[#F2E9DA] px-2 sm:px-3 py-1 rounded-full">
+              <HiTrendingUp className="text-[#8B8680] text-sm" />
+              <span className="text-xs sm:text-sm font-semibold text-[#8B8680]">+{metrics.dailyUsers.change}%</span>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={320}>
@@ -919,19 +926,19 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
           ref={tokenUsageChartRef}
           className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300"
         >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
-                <HiKey className="text-white text-2xl" />
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="bg-[#F5C200] rounded-xl p-2 sm:p-3 shadow-lg">
+                <HiKey className="text-white text-lg sm:text-2xl" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-gray-800">การใช้ Token รายวัน</h3>
-                <p className="text-sm text-gray-600">7 วันล่าสุด</p>
+                <h3 className="text-lg sm:text-2xl font-bold text-gray-800">การใช้ Token รายวัน</h3>
+                <p className="text-xs sm:text-sm text-gray-600">7 วันล่าสุด</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-[#F2E9DA] px-3 py-1 rounded-full">
-              <HiLightningBolt className="text-[#8B8680]" />
-              <span className="text-sm font-semibold text-[#8B8680]">+{metrics.tokenUsage.change}%</span>
+            <div className="flex items-center gap-1 sm:gap-2 bg-[#F2E9DA] px-2 sm:px-3 py-1 rounded-full">
+              <HiLightningBolt className="text-[#8B8680] text-sm" />
+              <span className="text-xs sm:text-sm font-semibold text-[#8B8680]">+{metrics.tokenUsage.change}%</span>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={320}>
@@ -979,26 +986,40 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
           ref={userRoleDistributionChartRef}
           className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300"
         >
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
-              <HiUserGroup className="text-white text-2xl" />
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="bg-[#F5C200] rounded-xl p-2 sm:p-3 shadow-lg">
+              <HiUserGroup className="text-white text-lg sm:text-2xl" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-800">บทบาทผู้ใช้</h3>
-              <p className="text-sm text-gray-600">การกระจายตามบทบาท</p>
+              <h3 className="text-lg sm:text-2xl font-bold text-gray-800">บทบาทผู้ใช้</h3>
+              <p className="text-xs sm:text-sm text-gray-600">การกระจายตามบทบาท</p>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={320}>
+          <ResponsiveContainer width="100%" height={isMobile ? 260 : 320}>
             <PieChart>
               <Pie
                 data={metrics.userRoleDistribution}
                 cx="50%"
                 cy="50%"
-                labelLine={false}
-                label={({ role, count, percent }) => `${role}\n${count} (${(percent * 100).toFixed(0)}%)`}
-                outerRadius={110}
+                labelLine={!isMobile}
+                label={isMobile
+                  ? ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                      const RADIAN = Math.PI / 180;
+                      const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
+                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                      return percent > 0.04 ? (
+                        <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight="bold">
+                          {`${(percent * 100).toFixed(0)}%`}
+                        </text>
+                      ) : null;
+                    }
+                  : ({ role, count, percent }) => `${role} ${count} (${(percent * 100).toFixed(0)}%)`
+                }
+                outerRadius={isMobile ? 90 : 110}
                 fill="#8884d8"
                 dataKey="count"
+                nameKey="role"
                 animationBegin={0}
                 animationDuration={800}
               >
@@ -1012,58 +1033,106 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
                 ))}
               </Pie>
               <Tooltip content={<PieTooltip />} />
+              {isMobile && (
+                <Legend
+                  formatter={(value, entry) => (
+                    <span style={{ fontSize: 12, color: '#374151' }}>
+                      {value} ({entry.payload.count})
+                    </span>
+                  )}
+                />
+              )}
             </PieChart>
           </ResponsiveContainer>
         </div>
 
         {/* Frequently Asked Questions Bar Chart */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
-              <HiQuestionMarkCircle className="text-white text-2xl" />
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="bg-[#F5C200] rounded-xl p-2 sm:p-3 shadow-lg">
+              <HiQuestionMarkCircle className="text-white text-lg sm:text-2xl" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-800">ประเภทคำถามที่พบบ่อย</h3>
-              <p className="text-sm text-gray-600">จำนวนคำถามตามประเภท</p>
+              <h3 className="text-lg sm:text-2xl font-bold text-gray-800">ประเภทคำถามที่พบบ่อย</h3>
+              <p className="text-xs sm:text-sm text-gray-600">จำนวนคำถามตามประเภท</p>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart 
-              data={metrics.frequentlyAskedQuestions}
-              layout="vertical"
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-            >
-              <defs>
-                <linearGradient id="barGradient" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#F5C200" stopOpacity={1}/>
-                  <stop offset="100%" stopColor="#F5C200" stopOpacity={1}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.5} />
-              <XAxis 
-                type="number" 
-                stroke="#6B7280" 
-                style={{ fontSize: '12px', fontWeight: '500' }} 
-                tickLine={false}
-                domain={[0, 'dataMax']}
-              />
-              <YAxis 
-                dataKey="type" 
-                type="category" 
-                stroke="#6B7280"
-                style={{ fontSize: '12px', fontWeight: '500' }}
-                width={140}
-                tickLine={false}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar 
-                dataKey="count" 
-                name="จำนวนคำถาม"
-                fill="url(#barGradient)"
-                radius={[0, 8, 8, 0]}
-                animationDuration={1000}
-              />
-            </BarChart>
+          <ResponsiveContainer width="100%" height={isMobile ? 300 : 320}>
+            {isMobile ? (
+              <BarChart
+                data={metrics.frequentlyAskedQuestions}
+                margin={{ top: 5, right: 10, left: 10, bottom: 70 }}
+              >
+                <defs>
+                  <linearGradient id="barGradientV" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0%" stopColor="#F5C200" stopOpacity={1}/>
+                    <stop offset="100%" stopColor="#F5C200" stopOpacity={1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.5} />
+                <XAxis
+                  dataKey="type"
+                  stroke="#6B7280"
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  interval={0}
+                  angle={-35}
+                  textAnchor="end"
+                  height={70}
+                />
+                <YAxis
+                  stroke="#6B7280"
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  width={30}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar
+                  dataKey="count"
+                  name="จำนวนคำถาม"
+                  fill="url(#barGradientV)"
+                  radius={[8, 8, 0, 0]}
+                  animationDuration={1000}
+                />
+              </BarChart>
+            ) : (
+              <BarChart 
+                data={metrics.frequentlyAskedQuestions}
+                layout="vertical"
+                margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+              >
+                <defs>
+                  <linearGradient id="barGradient" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#F5C200" stopOpacity={1}/>
+                    <stop offset="100%" stopColor="#F5C200" stopOpacity={1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.5} />
+                <XAxis 
+                  type="number" 
+                  stroke="#6B7280" 
+                  style={{ fontSize: '12px', fontWeight: '500' }} 
+                  tickLine={false}
+                  domain={[0, 'dataMax']}
+                />
+                <YAxis 
+                  dataKey="type" 
+                  type="category" 
+                  stroke="#6B7280"
+                  style={{ fontSize: '11px', fontWeight: '500' }}
+                  width={120}
+                  tickLine={false}
+                />
+                <Tooltip content={<CustomTooltip />} position={{ x: 10 }} allowEscapeViewBox={{ x: false, y: true }} />
+                <Bar 
+                  dataKey="count" 
+                  name="จำนวนคำถาม"
+                  fill="url(#barGradient)"
+                  radius={[0, 8, 8, 0]}
+                  animationDuration={1000}
+                />
+              </BarChart>
+            )}
           </ResponsiveContainer>
         </div>
       </div>
@@ -1129,16 +1198,16 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
         {/* System Status - Only show when not User filter */}
         {filter !== 'user' && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-[#10B981] rounded-xl p-3 shadow-lg">
-              <HiCheckCircle className="text-white text-2xl" />
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="bg-[#10B981] rounded-xl p-2 sm:p-3 shadow-lg">
+              <HiCheckCircle className="text-white text-lg sm:text-2xl" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-800">สถานะระบบ</h3>
-              <p className="text-sm text-gray-600">System Health</p>
+              <h3 className="text-lg sm:text-2xl font-bold text-gray-800">สถานะระบบ</h3>
+              <p className="text-xs sm:text-sm text-gray-600">System Health</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="p-4 bg-[#F0FDF4] rounded-xl border border-[#D1FAE5]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-800">API Status</span>
@@ -1236,13 +1305,13 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
         {/* Week Comparison - Hide when System filter or Support role */}
         {filter !== 'system' && isAdmin && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
-              <HiTrendingUp className="text-white text-2xl" />
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="bg-[#F5C200] rounded-xl p-2 sm:p-3 shadow-lg">
+              <HiTrendingUp className="text-white text-lg sm:text-2xl" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-800">เปรียบเทียบรายสัปดาห์</h3>
-              <p className="text-sm text-gray-600">Week over Week</p>
+              <h3 className="text-lg sm:text-2xl font-bold text-gray-800">เปรียบเทียบรายสัปดาห์</h3>
+              <p className="text-xs sm:text-sm text-gray-600">Week over Week</p>
             </div>
           </div>
           <div className="space-y-4">
@@ -1295,13 +1364,13 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
         {/* Bot Knowledge Accuracy - Hide when System filter or Support role */}
         {filter !== 'system' && isAdmin && (
         <div ref={botAccuracyDetailRef} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 flex flex-col h-full">
-          <div className="flex items-center gap-3 mb-6 flex-shrink-0">
-            <div className="bg-[#F5C200] rounded-xl p-3 shadow-lg">
-              <HiFire className="text-white text-2xl" />
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6 flex-shrink-0">
+            <div className="bg-[#F5C200] rounded-xl p-2 sm:p-3 shadow-lg">
+              <HiFire className="text-white text-lg sm:text-2xl" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-800">ความแม่นยำของ Bot</h3>
-              <p className="text-sm text-gray-600">Bot Knowledge Accuracy (รวมทั้งหมด)</p>
+              <h3 className="text-lg sm:text-2xl font-bold text-gray-800">ความแม่นยำของ Bot</h3>
+              <p className="text-xs sm:text-sm text-gray-600">Bot Knowledge Accuracy (รวมทั้งหมด)</p>
             </div>
           </div>
           <div className="flex-1 flex flex-col justify-center">
@@ -1321,7 +1390,7 @@ function Dashboard({ users = [], groups = [], userRole = 'support' }) {
             </div>
 
             {/* Statistics Grid */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
               <div className="p-4 bg-[#FFFAF0] rounded-xl border border-[#F5E5B8]">
                 <p className="text-xs text-gray-600 mb-1">คำถามทั้งหมด</p>
                 <p className="text-xl font-bold text-gray-900">{metrics.botKnowledgeAccuracy.totalQuestions.toLocaleString('th-TH')}</p>

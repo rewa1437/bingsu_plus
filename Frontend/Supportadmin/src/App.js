@@ -23,7 +23,7 @@ function AppLayout({ userRole, setUserRole, users, groups, setUsers, setGroups }
         window.userRole = role;
       }} />
       {/* Main Content */}
-      <main className={`flex-1 bg-white px-8 py-6 overflow-auto flex flex-col transition-all duration-300 relative ${isSidebarCollapsed ? 'pl-16' : ''}`}>
+      <main className={`flex-1 bg-white px-4 sm:px-8 py-6 overflow-auto flex flex-col transition-all duration-300 relative ${isSidebarCollapsed ? 'sm:pl-16' : ''}`}>
         <div className="absolute top-6 right-8 z-[120]">
           <NotificationBell users={users} />
         </div>
