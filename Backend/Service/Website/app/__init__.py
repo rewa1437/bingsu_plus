@@ -1,3 +1,1 @@
-"""
-Bingsu Backend Website - FastAPI Application
-"""
+# Namespace/package marker for FastAPI app modules.

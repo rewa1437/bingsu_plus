@@ -1,0 +1,23 @@
+# Environment (do not commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# Build / cache
+build/
+dist/
+.uploads/
+.pgdata/
+.cache/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs
+*.log

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { HiOutlineMail, HiLockClosed, HiOutlineUser, HiOutlineEye, HiOutlineEyeOff } from 'react-icons/hi';
 import ntLogo from '../assets/images/NT_Logo.png';
 import bingsuLogo from '../assets/images/หน่องบิงไม่มีพื้นละ.png';
+import { api } from '../services/api';
 
 function Login() {
   const navigate = useNavigate();
@@ -18,13 +19,11 @@ function Login() {
   // Form states for Sign Up
   const [signUpName, setSignUpName] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
+  const [signUpPassword, setSignUpPassword] = useState('');
+  const [signUpConfirmPassword, setSignUpConfirmPassword] = useState('');
   const [signUpError, setSignUpError] = useState('');
+  const [signUpSuccess, setSignUpSuccess] = useState('');
   const [signUpLoading, setSignUpLoading] = useState(false);
-
-  // Function to toggle between Sign in and Sign up
-  const toggleAuthMode = (mode) => {
-    setIsSignIn(mode);
-  };
 
   // Validation functions
   const isSignInValid = () => {
@@ -32,45 +31,61 @@ function Login() {
   };
 
   const isSignUpValid = () => {
-    return signUpName.trim() !== '' && signUpEmail.trim() !== '';
+    return signUpName.trim() !== '' && signUpEmail.trim() !== '' && signUpPassword.length >= 8 && signUpPassword === signUpConfirmPassword;
   };
 
   const handleSignIn = async (e) => {
     e.preventDefault();
     setSignInError('');
-    
-    if (!isSignInValid()) {
-      return;
-    }
-
+    if (!isSignInValid()) return;
     setSignInLoading(true);
-    // Frontend only - no API calls
-    setTimeout(() => {
+    try {
+      const data = await api.login(signInEmail.trim(), signInPassword);
+      const role = data.user?.role;
+      const allowed = ['support', 'admin', 'admin_metrics'].includes(role);
+      if (!allowed) {
+        api.logout();
+        setSignInError(role === 'user' ? 'บัญชีนี้เป็นผู้ใช้งานทั่วไป ไม่สามารถเข้า Support Admin ได้' : 'ไม่มีสิทธิ์เข้า Support Admin');
+        return;
+      }
+      navigate('/dashboard');
+    } catch (err) {
+      setSignInError(err.message || 'เข้าสู่ระบบไม่สำเร็จ');
+    } finally {
       setSignInLoading(false);
-      // Navigate to homepage (frontend only)
-      navigate('/homepage');
-    }, 1000);
+    }
   };
 
   const handleSignUp = async (e) => {
     e.preventDefault();
     setSignUpError('');
-    
-    if (!isSignUpValid()) {
-      return;
-    }
+    setSignUpSuccess('');
+    if (!isSignUpValid()) return;
 
     setSignUpLoading(true);
-    // Frontend only - no API calls
-    setTimeout(() => {
+    try {
+      await api.signup(signUpName.trim(), signUpEmail.trim(), signUpPassword);
+      setSignUpSuccess('สมัครสำเร็จแล้ว กรุณาเข้าสู่ระบบ');
+      setSignUpName('');
+      setSignUpEmail('');
+      setSignUpPassword('');
+      setSignUpConfirmPassword('');
+      setIsSignIn(true);
+    } catch (err) {
+      let msg = err?.message;
+      if (msg != null && typeof msg !== 'string') msg = String(msg);
+      else if (!msg) msg = String(err || '');
+      // แทนที่ข้อความยาวเรื่อง Vector/docker/legacy ทุกแบบ (รวม "ดู docker compose logs legacy และ api")
+      const confusing =
+        /network\s*error|แปลง\s*vector|docker\s*compose|backend\s*ล้ม|บันทึก.*vector|legacy\s*และ\s*api|ถ้าเกิดตอนกดบันทึก|เชื่อมต่อเซิร์ฟเวอร์ไม่ได้|ดู\s*docker|logs\s*legacy/i.test(msg) ||
+        (msg.includes('Vector') && msg.includes('backend')) ||
+        msg.includes('ดู docker compose logs');
+      setSignUpError(confusing
+        ? 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — ตรวจสอบว่า backend รันอยู่ และใน .env ตั้ง REACT_APP_API_BASE_URL ให้ชี้ไปพอร์ตที่ backend รัน (เช่น 5052 หรือ 8083) แล้ว restart แอป'
+        : (msg || 'ลงทะเบียนไม่สำเร็จ กรุณาลองใหม่'));
+    } finally {
       setSignUpLoading(false);
-      // Navigate to verifying page (frontend only)
-      navigate('/verifying', { 
-        state: { 
-          email: signUpEmail
-        } 
-      });
-    }, 1000);
+    }
   };
 
   return (
@@ -88,37 +103,15 @@ function Login() {
         border: '4px solid rgba(252,186,3,0.95)',
         boxShadow: '0 0 20px rgba(252,186,3,0.3), 0 10px 30px rgba(0,0,0,0.08)'
       }}>
-        {/* Tabs */}
-        <div className="absolute top-0 left-0 right-0 flex items-end bg-gray-200 rounded-tl-[28px] rounded-tr-[28px] transition-all duration-500 ease-in-out">
-          <button
-            onClick={() => toggleAuthMode(true)}
-            className={`text-sm font-medium py-2.5 flex-1 flex items-center justify-center transition-all duration-500 ease-in-out transform ${
-              isSignIn
-                ? 'bg-white text-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.1)] relative z-10 rounded-tl-[48px] rounded-br-[70px] scale-100'
-                : 'text-zinc-500 relative z-0 hover:text-zinc-600 hover:scale-[1.02] rounded-tl-[48px] rounded-tr-[48px] rounded-br-[16px] active:scale-[0.98]'
-            }`}
-          >
-            Sign in
-          </button>
-          <button
-            onClick={() => toggleAuthMode(false)}
-            className={`text-sm font-medium py-2.5 flex-1 flex items-center justify-center transition-all duration-500 ease-in-out transform ${
-              !isSignIn
-                ? 'bg-white text-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.1)] relative z-10 rounded-bl-[70px] rounded-tr-[48px] scale-100'
-                : 'text-zinc-500 relative z-0 hover:text-zinc-600 hover:scale-[1.02] rounded-tl-[48px] rounded-tr-[48px] rounded-br-[16px] active:scale-[0.98]'
-            }`}
-            style={{ marginLeft: '-8px' }}
-          >
-            Register
-          </button>
-        </div>
-
         <div className="flex flex-col items-center pt-8 transition-all duration-500 ease-in-out overflow-hidden">
           {/* Logo */}
-          <div className="mb-4 h-20 w-20 flex items-center justify-center rounded-full bg-yellow-100 transition-all duration-500 ease-in-out hover:scale-110 hover:rotate-6 cursor-default overflow-hidden">
+          <div className="mb-6 h-20 w-20 flex items-center justify-center rounded-full bg-yellow-100 transition-all duration-500 ease-in-out hover:scale-110 hover:rotate-6 cursor-default overflow-hidden">
             <img src={bingsuLogo} alt="BingSu Logo" className="w-full h-full object-cover rounded-full" />
           </div>
-          <h2 className="mb-6 text-2xl font-bold text-zinc-800 transition-all duration-500 ease-in-out drop-shadow-lg" style={{ textShadow: '0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)' }}>BingSu</h2>
+          <h2 className="mb-6 text-2xl font-bold text-zinc-800 text-center transition-all duration-500 ease-in-out drop-shadow-lg" style={{ textShadow: '0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(38, 0, 255, 0.06)' }}>
+            <span className="block">BingSu</span>
+            <span className="block">Support & Admin</span>
+          </h2>
 
           <div className="w-full max-w-xs relative overflow-hidden" style={{ minHeight: '280px' }}>
             <div 
@@ -260,6 +253,48 @@ function Login() {
                 </div>
               </div>
 
+              <div className="mb-4 relative">
+                <label htmlFor="signup-password" className="block text-xs text-zinc-500 mb-2 transition-colors duration-400">Password (อย่างน้อย 8 ตัว)</label>
+                <div className="relative">
+                  <HiLockClosed className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                  <input
+                    id="signup-password"
+                    type="password"
+                    placeholder="Enter password"
+                    value={signUpPassword}
+                    onChange={(e) => setSignUpPassword(e.target.value)}
+                    required
+                    minLength={8}
+                    className="w-full pl-10 pr-3 py-3 rounded-lg border border-zinc-300 text-sm text-black placeholder-zinc-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-500 hover:border-zinc-400"
+                  />
+                </div>
+              </div>
+
+              <div className="mb-4 relative">
+                <label htmlFor="signup-confirm-password" className="block text-xs text-zinc-500 mb-2 transition-colors duration-400">Confirm Password</label>
+                <div className="relative">
+                  <HiLockClosed className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                  <input
+                    id="signup-confirm-password"
+                    type="password"
+                    placeholder="Confirm password"
+                    value={signUpConfirmPassword}
+                    onChange={(e) => setSignUpConfirmPassword(e.target.value)}
+                    required
+                    minLength={8}
+                    className="w-full pl-10 pr-3 py-3 rounded-lg border border-zinc-300 text-sm text-black placeholder-zinc-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-500 hover:border-zinc-400"
+                  />
+                </div>
+                {signUpConfirmPassword && signUpPassword !== signUpConfirmPassword && (
+                  <p className="mt-1 text-xs text-red-600">รหัสผ่านไม่ตรงกัน</p>
+                )}
+              </div>
+
+              {signUpSuccess && (
+                <div className="mb-3 p-2 rounded-lg bg-green-50 border border-green-200">
+                  <p className="text-xs text-green-700">{signUpSuccess}</p>
+                </div>
+              )}
               {signUpError && (
                 <div className="mb-3 p-2 rounded-lg bg-red-50 border border-red-200">
                   <p className="text-xs text-red-600">{signUpError}</p>
